@@ -1,4 +1,3 @@
-(ql:quickload :mogetical)
+(ql:quickload '(:lowmogecage :trivial-gamekit/distribution))
 
-(sb-ext:save-lisp-and-die "Mogetical.exe" :toplevel #'mogetical:moge ;;:application-type :gui
-			  :executable t :save-runtime-options t)
+(gamekit.distribution:deliver :lowmogecage 'lowmogecage::lowmogecage)
