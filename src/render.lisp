@@ -394,32 +394,33 @@
 ;;装備中のアイテムとカーソル上のアイテムの比較数値
 (defun draw-diff-item-ability (damage critical hit selected-unit)
   (with-slots (weapon) selected-unit
-    (with-slots ((w-damage damage) (w-critical critical) (w-hit hit)) weapon
-      (let ((diff-damage (- damage w-damage))
-	    (diff-cri (- (critical-rate critical) (critical-rate  w-critical)))
-	    (diff-hit (- hit w-hit)))
-	(cond
-	  ((> diff-damage 0)
-	   (gk:draw-text (format nil "+~a" diff-damage) (gk:vec2 510 390) :fill-color (gk:vec4 0 1 0 1)
-									  :font *font32*))
-	  ((< diff-damage 0)
-	   (gk:draw-text (format nil "~a" diff-damage) (gk:vec2 510 390) :fill-color (gk:vec4 1 0 0 1)
-									 :font *font32*)))
-	(cond
-	  ((> diff-cri 0)
-	   (gk:draw-text (format nil "+~a" diff-cri) (gk:vec2 520 330) :fill-color (gk:vec4 0 1 0 1)
-								       :font *font32*))
-	  ((< diff-cri 0)
-	   (gk:draw-text (format nil "~a" diff-cri) (gk:vec2 520 330) :fill-color (gk:vec4 1 0 0 1)
-								      :font *font32*)))
-	(cond
-	  ((> diff-hit 0)
-	   (gk:draw-text (format nil "+~a" diff-hit) (gk:vec2 510 360) :fill-color (gk:vec4 0 1 0 1)
-								       :font *font32*))
-	  ((< diff-hit 0)
-	   (gk:draw-text (format nil "~a" diff-hit) (gk:vec2 510 360) :fill-color (gk:vec4 1 0 0 1)
-								      :font *font32*)))
-	))))
+    (when weapon
+      (with-slots ((w-damage damage) (w-critical critical) (w-hit hit)) weapon
+	(let ((diff-damage (- damage w-damage))
+	      (diff-cri (- (critical-rate critical) (critical-rate  w-critical)))
+	      (diff-hit (- hit w-hit)))
+	  (cond
+	    ((> diff-damage 0)
+	     (gk:draw-text (format nil "+~a" diff-damage) (gk:vec2 510 390) :fill-color (gk:vec4 0 1 0 1)
+									    :font *font32*))
+	    ((< diff-damage 0)
+	     (gk:draw-text (format nil "~a" diff-damage) (gk:vec2 510 390) :fill-color (gk:vec4 1 0 0 1)
+									   :font *font32*)))
+	  (cond
+	    ((> diff-cri 0)
+	     (gk:draw-text (format nil "+~a" diff-cri) (gk:vec2 520 330) :fill-color (gk:vec4 0 1 0 1)
+									 :font *font32*))
+	    ((< diff-cri 0)
+	     (gk:draw-text (format nil "~a" diff-cri) (gk:vec2 520 330) :fill-color (gk:vec4 1 0 0 1)
+									:font *font32*)))
+	  (cond
+	    ((> diff-hit 0)
+	     (gk:draw-text (format nil "+~a" diff-hit) (gk:vec2 510 360) :fill-color (gk:vec4 0 1 0 1)
+									 :font *font32*))
+	    ((< diff-hit 0)
+	     (gk:draw-text (format nil "~a" diff-hit) (gk:vec2 510 360) :fill-color (gk:vec4 1 0 0 1)
+									:font *font32*)))
+	  )))))
 
 ;;クリティカル率
 (defun critical-rate (cri)
@@ -439,7 +440,52 @@
 	 "片手持ち"
 	 "両手持ち"))))
 
-;;カーソルと重なってるアイテム情報
+;;持ち方による武器の威力
+(defun 1hor2h-damage (damage shield hand category)
+  (cond
+    ((and (eq hand :1hor2h)
+	  (null shield))
+     (cond
+       ((eq category :sword)
+	(+ damage 10))
+       ((eq category :axe)
+	(+ damage 19))
+       ((eq category :spear)
+	(+ damage 5))))
+    (t damage)))
+
+
+;;装備中の武器情報
+(defun draw-equiped-weapon-info (weapon shield)
+  (with-slots (name damage critical hit rangemin rangemax required-str hand category) weapon
+    (let ((dmg (1hor2h-damage damage shield hand category)))
+    (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 390 720) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text (format nil "威力 : ~a" dmg) (gk:vec2 390 690) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text (format nil "命中 : ~a" hit) (gk:vec2 390 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text (format nil "必殺 : ~a％" (critical-rate critical)) (gk:vec2 390 630) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text (format nil "射程 : ~a～~a" rangemin rangemax) (gk:vec2 390 600) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 390 570) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text (format nil "持ち方 : ~a" (draw-weapon-holding hand shield)) (gk:vec2 390 540) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+    (gk:draw-text "装備中の武器" (gk:vec2 430 755) :fill-color (gk:vec4 0.5 0.4 1 1) :font *font32*)
+    (gk:draw-rect (gk:vec2 380 525) 330 260 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+    )))
+
+;;選択している武器情報
+(defun draw-selected-weapon-info (weapon shield str)
+  (with-slots (name damage critical hit rangemin rangemax required-str hand category equiped) weapon
+    (let ((dmg (1hor2h-damage damage shield hand category)))
+      (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 390 420) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "威力 : ~a" dmg) (gk:vec2 390 390) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "命中 : ~a" hit) (gk:vec2 390 360) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "必殺 : ~a％" (critical-rate critical)) (gk:vec2 390 330) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "射程 : ~a～~a" rangemin rangemax) (gk:vec2 390 300) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 390 270) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "持ち方 : ~a" (draw-weapon-holding hand shield)) (gk:vec2 390 240) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "装備中 : ~a" equiped) (gk:vec2 390 210) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (when (> required-str str)
+	(gk:draw-text "筋力不足！" (gk:vec2 550 270) :fill-color (gk:vec4 1 0 0 1) :font *font32*)))))
+
+;;カーソルと重なってる武器情報
 (defmethod draw-item-info-with-cursor ((item weapondesc))
   (with-slots (selected-unit) *game*
     (when selected-unit
@@ -447,45 +493,85 @@
 	(with-slots (name damage critical hit rangemin rangemax category equiped required-str hand) item
 	  ;;装備中の武器
 	  (when weapon
-	    (with-slots (name damage-table critical hit rangemin rangemax required-str hand) weapon
-	      (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 390 720) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text (format nil "威力 : ~a" damage) (gk:vec2 390 690) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text (format nil "命中 : ~a" hit) (gk:vec2 390 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text (format nil "必殺 : ~a％" (critical-rate critical)) (gk:vec2 390 630) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text (format nil "射程 : ~a～~a" rangemin rangemax) (gk:vec2 390 600) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 390 570) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text (format nil "持ち方 : ~a" (draw-weapon-holding hand shield)) (gk:vec2 390 540) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	      (gk:draw-text "装備中の武器" (gk:vec2 430 755) :fill-color (gk:vec4 0.5 0.4 1 1) :font *font32*)
-	      (gk:draw-rect (gk:vec2 380 525) 330 260 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
-	      ))
+	    (draw-equiped-weapon-info weapon shield))
 	  ;;選択中の武器
 	  (gk:draw-rect (gk:vec2 380 185) 330 300 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
 	  (gk:draw-text "選択中の武器" (gk:vec2 430 455) :fill-color (gk:vec4 0 1 1 1) :font *font32*)
 	  (cond
+	    ((and shield
+		  (eq hand :2h))
+	     (gk:draw-text "盾を装備しているため" (gk:vec2 420 400) :fill-color (gk:vec4 1 0 0 1) :font *font32*)
+	     (gk:draw-text "装備できません" (gk:vec2 420 370) :fill-color (gk:vec4 1 0 0 1) :font *font32*))
 	    ((find category canequip)
-	     (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 390 420) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "威力 : ~a" damage) (gk:vec2 390 390) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "命中 : ~a" hit) (gk:vec2 390 360) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "必殺 : ~a％" (critical-rate critical)) (gk:vec2 390 330) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "射程 : ~a～~a" rangemin rangemax) (gk:vec2 390 300) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 390 270) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "持ち方 : ~a" (draw-weapon-holding hand shield)) (gk:vec2 390 240) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (gk:draw-text (format nil "装備中 : ~a" equiped) (gk:vec2 390 210) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-	     (draw-diff-item-ability damage critical hit selected-unit)
-	     (when (> required-str str)
-	       (gk:draw-text "筋力不足！" (gk:vec2 550 270) :fill-color (gk:vec4 1 0 0 1) :font *font32*)))
+	     (draw-selected-weapon-info item shield str)
+	     (draw-diff-item-ability damage critical hit selected-unit))
 	    (t
 	     (gk:draw-text "装備できません" (gk:vec2 420 400) :fill-color (gk:vec4 1 1 1 1) :font *font32*))))))))
 
 (defmethod draw-item-info-with-cursor ((item armordesc))
-  (with-slots (name avoid def) item
-    (gk:draw-rect (gk:vec2 680 265) 280 220 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
-    (gk:draw-text "選択中の防具" (gk:vec2 730 455) :fill-color (gk:vec4 0 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 690 420) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "防御 : ~a" def) (gk:vec2 690 390) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "回避 : ~a" avoid) (gk:vec2 690 360) :fill-color (gk:vec4 1 1 1 1) :font *font32*)))
+  (with-slots (selected-unit) *game*
+    (when selected-unit
+      (with-slots (armor str) selected-unit
+	(cond
+	  (armor
+	   (with-slots (name avoid def required-str) armor
+	     (gk:draw-text "装備中の防具" (gk:vec2 730 755) :fill-color (gk:vec4 1 1 0.4 1) :font *font32*)
+	     (gk:draw-rect (gk:vec2 680 565) 310 220 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+	     (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 690 720) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "防御 : ~a" def) (gk:vec2 690 690) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "回避 : ~a" avoid) (gk:vec2 690 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 690 630) :fill-color (gk:vec4 1 1 1 1) :font *font32*)))
+	  (t (gk:draw-text  "なし" (gk:vec2 790 680) :fill-color (gk:vec4 1 1 1 1) :font *font32*)))
+	(with-slots (name avoid def equiped required-str) item
+	  (gk:draw-rect (gk:vec2 680 265) 310 220 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+	  (gk:draw-text "選択中の防具" (gk:vec2 730 455) :fill-color (gk:vec4 0 1 1 1) :font *font32*)
+	  (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 690 420) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	  (gk:draw-text (format nil "防御 : ~a" def) (gk:vec2 690 390) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	  (gk:draw-text (format nil "回避 : ~a" avoid) (gk:vec2 690 360) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	  (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 690 330) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	  (gk:draw-text (format nil "装備中 : ~a" equiped) (gk:vec2 690 300) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	  (when (> required-str str)
+	    (gk:draw-text "筋力不足！" (gk:vec2 860 330) :fill-color (gk:vec4 1 0 0 1) :font *font32*)))))))
 
-
+;;盾情報表示
+(defmethod draw-item-info-with-cursor ((item shielddesc))
+  (with-slots (selected-unit) *game*
+    (when selected-unit
+      (with-slots (shield str weapon) selected-unit
+	(cond
+	  ((and weapon (eq (hand weapon) :2h))
+	   (gk:draw-rect (gk:vec2 730 265) 390 220 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+	   (gk:draw-text "両手持ち武器を装備しているので" (gk:vec2 760 455) :fill-color (gk:vec4 0 1 1 1) :font *font32*)
+	   (gk:draw-text "盾を装備できない" (gk:vec2 760 425) :fill-color (gk:vec4 0 1 1 1) :font *font32*))
+	  (t
+	   (gk:draw-text "装備中の盾" (gk:vec2 780 755) :fill-color (gk:vec4 1 1 0.4 1) :font *font32*)
+	   (gk:draw-rect (gk:vec2 730 565) 310 220 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+	   (cond
+	     (shield
+	      (with-slots (name avoid def required-str) shield
+		(gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 740 720) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+		(gk:draw-text (format nil "防御 : ~a" def) (gk:vec2 740 690) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+		(gk:draw-text (format nil "回避 : ~a" avoid) (gk:vec2 740 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+		(gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 740 630) :fill-color (gk:vec4 1 1 1 1) :font *font32*)))
+	     (t (gk:draw-text  "なし" (gk:vec2 790 680) :fill-color (gk:vec4 1 1 1 1) :font *font32*)))
+	   (with-slots (name avoid def equiped required-str) item
+	     (gk:draw-rect (gk:vec2 730 265) 310 220 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+	     (gk:draw-text "選択中の盾" (gk:vec2 780 455) :fill-color (gk:vec4 0 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 740 420) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "防御 : ~a" def) (gk:vec2 740 390) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "回避 : ~a" avoid) (gk:vec2 740 360) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 740 330) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (gk:draw-text (format nil "装備中 : ~a" equiped) (gk:vec2 740 300) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+	     (when (> required-str str)
+	       (gk:draw-text "筋力不足！" (gk:vec2 910 330) :fill-color (gk:vec4 1 0 0 1) :font *font32*)))
+	   ;;1hor2h武器を装備していて縦を装備していなかった場合
+	   (when (and (null shield)
+		      (eq (hand weapon) :1hor2h))
+	     (gk:draw-rect (gk:vec2 380 185) 330 300 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+	     (gk:draw-text "装備中の武器情報変更" (gk:vec2 430 455) :fill-color (gk:vec4 0 1 1 1) :font *font32*)
+	     (draw-equiped-weapon-info weapon nil)
+	     (draw-selected-weapon-info weapon t str)
+	     )))))))
 
 
 ;;装備メニュー画面のアイテムボタン表示

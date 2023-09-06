@@ -666,7 +666,7 @@
 	  move 4
 	  movecost  #(1 -1 -1 2 2 3 -1 1 1)
 	  lvuprate '(:hp 90 :str 60 :vit 70 :agi 30 :int 10 :res 30)
-	  canequip  '(:sword :spear :ax :item :armor)
+	  canequip  '(:sword :spear :ax :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-warrior+))
 	  id :warrior)
     ))
@@ -691,7 +691,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost  #(1 -1 -1 2 2 -1 -1 1 1)
 	  lvuprate '(:hp 60 :str 10 :vit 30 :agi 20 :int 90 :res 60)
-	  canequip  '(:wand :item :armor)
+	  canequip  '(:wand :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-sorcerer+))
 	  id :sorcerer)))
 
@@ -716,7 +716,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost  #(1 -1 -1 2 2 -1 -1 1 1)
 	  lvuprate '(:hp 60 :str 10 :vit 30 :agi 30 :int 80 :res 90)
-	  canequip  '(:staff :item :armor)
+	  canequip  '(:staff :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-priest+))
 	  id :priest)))
 
@@ -764,7 +764,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost   #(1 -1 -1 2 2 3 -1 1 1)
 	  lvuprate '(:hp 80 :str 90 :vit 70 :agi 40 :int 10 :res 40)
-	  canequip  '(:spear :item :armor)
+	  canequip  '(:spear :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-s-knight+))
 	  id :s-knight)))
 
@@ -788,7 +788,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost   #(1 -1 -1 1 1 1 1 1 1)
 	  lvuprate '(:hp 80 :str 60 :vit 70 :agi 60 :int 10 :res 80)
-	  canequip  '(:spear :item :armor)
+	  canequip  '(:spear :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-p-knight+))
 	  id :p-knight)))
 
@@ -812,7 +812,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost   #(1 -1 -1 2 3 3 2 1 1)
 	  lvuprate '(:hp 70 :str 60 :vit 50 :agi 80 :int 10 :res 40)
-	  canequip  '(:sword :item :armor)
+	  canequip  '(:sword :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-thief+))
 	  id :thief)))
 
@@ -1009,6 +1009,9 @@
 
 
 (defclass armordesc (itemdesc)
+  ())
+
+(defclass shielddesc (itemdesc)
   ())
 
 

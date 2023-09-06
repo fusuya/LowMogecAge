@@ -156,7 +156,7 @@
   (set-font)
   (bind-key-event)
   (setf *game* (make-instance 'game :state :title
-			      :item (create-item-n 45)
+			      :item (create-item-n +w_max+)
 			      :world-pos (gk:vec2 200 400)
 				    :scroll (gk:vec2 0 0)
 				    :enemy-rate (copy-tree *appear-enemy-rate-monster*) ;; todo
@@ -247,16 +247,35 @@
 
 ;;------------------------------------------------------------------------------------
 (defmethod equip-item ((item weapondesc) unit)
-  (with-slots (weapon name) unit
-    (setf (equiped weapon) nil
-	  (equiped item) name
-	  weapon item)))
+  (with-slots (weapon name shield) unit
+    (unless (and (eq (hand item) :2h) ;;盾持ってる場合2hは装備できない
+		 shield)
+      (when weapon
+	(setf (equiped weapon) nil))
+      (setf weapon item
+	    (equiped weapon) name))))
 
 (defmethod equip-item ((item armordesc) unit)
   (with-slots (armor name) unit
-    (setf (equiped armor) nil
-	  (equiped item) name
-	  armor item)))
+    (when armor
+      (setf (equiped armor) nil))
+    (setf armor item
+	  (equiped armor) name)))
+
+;;盾装備
+(defun equip-shield (item unit)
+  (with-slots (shield name weapon) unit
+    (when shield
+      (setf (equiped shield) nil))
+    (setf shield item
+	  (equiped shield) name)))
+
+(defmethod equip-item ((item shielddesc) unit)
+  (with-slots (shield name weapon) unit
+    (if weapon
+	(unless (eq (hand weapon) :2h)
+	  (equip-shield item unit))
+	(equip-shield item unit))))
 
 ;; btn event ----------------------------------------------------------------
 
@@ -374,9 +393,10 @@
 (defmethod btn-click-event ((btn equip-item-btn))
   (with-slots (item equiped-unit) btn
     (with-slots (selected-unit) *game*
-      (with-slots (canequip name) selected-unit
-	(with-slots (categoly equiped) item
-	  (when (and (find categoly canequip)
+      (with-slots (canequip name str shield) selected-unit
+	(with-slots (category equiped required-str hand) item
+	  (when (and (find category canequip)
+		     (>= str required-str)
 		     (null equiped-unit))
 	    (equip-item item selected-unit)
 	    (create-item-btn)
@@ -1432,10 +1452,31 @@
   (setf (game/state *game*) :equip-menu))
 
 
+;;装備を外す
+(defun remove-equip (btn)
+  (with-slots (item equiped-unit) btn
+    (with-slots (selected-unit) *game*
+      (with-slots (weapon armor shield name) selected-unit
+	(when (equal equiped-unit name)
+	  (cond
+	    ((and weapon
+		  (eq (type-of item) 'weapondesc))
+	     (setf (equiped weapon) nil
+		   weapon nil))
+	    ((and armor
+		  (eq (type-of item) 'armordesc))
+	     (setf (equiped armor) nil
+		   armor nil))
+	    ((and shield
+		  (eq (type-of item) 'shielddesc))
+	     (setf (equiped shield) nil
+		   shield nil)))
+	  (create-item-btn)
+	  (create-next-prev-btn))))))
 
 (Defun equip-menu-event ()
   (with-slots (a) *keystate*
-    (with-slots (left) *mouse*
+    (with-slots (left right) *mouse*
       (with-slots (state btn-list) *game*
 	(cond
 	  (a (setf state :battle
@@ -1443,7 +1484,11 @@
 	  (left
 	   (loop :for btn :in btn-list
 		 :do (when (collide-p *mouse* btn)
-		       (btn-click-event btn)))))))))
+		       (btn-click-event btn))))
+	  (right
+	   (loop :for btn :in btn-list
+		 :do (when (collide-p *mouse* btn)
+		       (remove-equip btn)))))))))
 
 ;;-----------------------------------------------------------------------
 ;;バトルエベント

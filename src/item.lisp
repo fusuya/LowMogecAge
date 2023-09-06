@@ -253,15 +253,15 @@
    (make-instance 'armordesc :category :armor :name "フォートレス" :required-str 27 :price 8200 :def 9 :avoid -3)
 	      
    ;;盾
-   (make-instance 'armordesc :category :shield :name "バックラー" :required-str 1 :price 60 :def 0 :avoid 1 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "ラウンドシールド" :required-str 8 :price 100 :def 1 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "カイトシールド" :required-str 13 :price 500 :def 1 :avoid 1 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "タワーシールド" :required-str 17 :price 600 :def 2 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "ターゲットシールド" :required-str 7 :price 680 :def 1 :avoid 1 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "ヒーターシールド" :required-str 10 :price 1000 :def 2 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "スパイクシールド" :required-str 13 :price 1800 :def 2 :avoid 1 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "グレートウォール" :required-str 20 :price 1800 :def 3 :avoid -1 :hand :1h)
-   (make-instance 'armordesc :category :shield :name "グレートパリィ" :required-str 30 :price 3300 :def 3 :avoid 1 :hand :2h)
+   (make-instance 'shielddesc :category :shield :name "バックラー" :required-str 1 :price 60 :def 0 :avoid 1 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "ラウンドシールド" :required-str 8 :price 100 :def 1 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "カイトシールド" :required-str 13 :price 500 :def 1 :avoid 1 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "タワーシールド" :required-str 17 :price 600 :def 2 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "ターゲットシールド" :required-str 7 :price 680 :def 1 :avoid 1 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "ヒーターシールド" :required-str 10 :price 1000 :def 2 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "スパイクシールド" :required-str 13 :price 1800 :def 2 :avoid 1 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "グレートウォール" :required-str 20 :price 1800 :def 3 :avoid -1 :hand :1h)
+   (make-instance 'shielddesc :category :shield :name "グレートパリィ" :required-str 30 :price 3300 :def 3 :avoid 1 :hand :2h)
    ))
 
 (defparameter *weapondescs*
@@ -283,7 +283,7 @@
 	   :collect (item-make n))))
 
 (defun create-item-n (n)
-  (loop :for a :from 0 :to n
+  (loop :for a :from 0 :below n
 	:collect (item-make a)))
 
 ;;ジョブ別初期武器
