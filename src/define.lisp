@@ -39,7 +39,7 @@
 (defparameter *save3-day* nil)
 
 
-(gk:register-resource-package :keyword "./assets/")
+(gk:register-resource-package :keyword "../assets/")
 
 
 (gk:define-font :mplus "font/mplus-1mn-regular.ttf")
@@ -48,6 +48,7 @@
 (gk:define-image :obj-img "img/new-objs-img.png")
 (gk:define-image :world-map "img/worldmap.png")
 (gk:define-image :skill-img "img/skill.png")
+(gk:define-image :monster-img "img/monster-img.png")
 
 
 ;;プレイヤー画像切り替えよう
@@ -301,7 +302,7 @@
 
 
 
-(defconstant +action-end+ 3)
+(defconstant +action-end+ 2)
 
 (my-enum +purple+ +red+ +green+ +blue+ +yellow+ +cyan+ +pink+ +white+)
 
@@ -483,6 +484,9 @@
    (vit-bonus       :accessor vit-bonus       :initform 30    :initarg :vit-bonus)
    (int-bonus       :accessor int-bonus       :initform 30    :initarg :int-bonus)
    (res-bonus       :accessor res-bonus       :initform 30    :initarg :res-bonus)
+   (hit-value       :accessor hit-value       :initform 0    :initarg :hit-value)
+   (avoid-value       :accessor avoid-value       :initform 0    :initarg :avoid-value)
+   (magic-power       :accessor magic-power       :initform 0    :initarg :magic-power)
    (level        :accessor level        :initform 30    :initarg :level)
    (expe      :accessor expe      :initform 0     :initarg :expe) ;;もらえる経験値orプレイヤーの所持経験値
    (lvup-exp  :accessor lvup-exp  :initform 50   :initarg :lvup-exp))) ;;次のレベルアップに必要な経験値
@@ -511,13 +515,15 @@
 (defclass enemy (common)
   ((centerx      :accessor centerx    :initform 30  :initarg :centerx)
    (centery      :accessor centery    :initform 30  :initarg :centery)
-   
    (deg          :accessor deg        :initform 10  :initarg :deg)))
 
 ;;画像
 (my-enum +img-e-p-knight+ +img-e-thief+ +img-e-s-knight+ +img-e-archer+ +img-e-priest+ +img-e-sorcerer+
-	 +img-e-warrior+ +img-goron+ +img-slime+ +img-orc+ +img-yote1+ +img-hydra+ +img-dragon+ +img-brigand+
+	 +img-e-warrior+
 	 +img-p-p-knight+ +img-p-thief+ +img-p-s-knight+ +img-p-archer+ +img-p-priest+ +img-p-sorcerer+ +img-p-warrior+)
+(my-enum  +img-slime+ +img-orc+ +img-yote1+ +img-hydra+ +img-dragon+ +img-brigand+ +img-arrow-hood+ +img-dagger-hood+
+	  +img-sabel-hood+ +img-shield-hood+ +img-skeleton+ +img-zombie+ +img-dry-corpse+ +img-ghost+ +img-phantom+
+	  +img-gust+ +img-gust-knight+)
 
 ;;プレイヤー用
 (defclass unit (obj status anime)
@@ -555,8 +561,19 @@
 
 (defclass e-unit (unit)
   (
-   (drop         :accessor drop       :initform nil :initarg :drop)    ;;ドロップするアイテム   
+   (drop         :accessor drop       :initform nil :initarg :drop)    ;;ドロップするアイテム
    (wakeup      :accessor wakeup      :initform nil :initarg :wakeup)))
+
+(defclass monster (e-unit)
+  ((def         :accessor def       :initform nil :initarg :def)
+   (rangemin         :accessor rangemin       :initform 1 :initarg :rangemin)
+   (rangemax         :accessor rangemax       :initform 1 :initarg :rangemax)))
+
+(defmethod initialize-instance :after ((monster monster) &rest initargs)
+  (declare (ignore initargs))
+  (with-slots (img-id) monster
+    (setf img-id :monster-img)))
+
 
 (defclass player ()
   ((party           :accessor party       :initform nil    :initarg :party)
@@ -574,7 +591,7 @@
 
 
 
-(defclass orc (e-unit)
+(defclass orc (monster)
   ())
 
 (defmethod initialize-instance :after ((e orc) &rest initargs)
@@ -589,7 +606,7 @@
 	  id :orc)))
 
 
-(defclass hydra (e-unit)
+(defclass hydra (monster)
   ((centerx      :accessor centerx    :initform 30  :initarg :centerx)
    (centery      :accessor centery    :initform 30  :initarg :centery)
    (deg          :accessor deg        :initform 10  :initarg :deg)))
@@ -605,20 +622,20 @@
 	  origin (gk:vec2 0 (* 32 +img-hydra+))
 	  id :hydara )))
 
-(defclass brigand (e-unit)
+(defclass brigand (monster)
   ())
 (defmethod initialize-instance :after ((e brigand) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move) e
+  (with-slots (job-name movecost lvuprate canequip id origin move rangemin rangemax atking-type) e
     (setf job-name "ブリガンド"
-	  move 3
+	  move 3 rangemin 2 rangemax 5 atking-type :long
 	  movecost  #(1 -1 -1 2 2 3 -1 2 1)
 	  lvuprate '(:hp 70 :str 60 :vit 50 :agi 40 :int 10 :res 40)
 	  canequip  '(:bow :item :armor)
 	  origin (gk:vec2 0 (* 32 +img-brigand+))
 	  id :brigand )))
 
-(Defclass slime (e-unit)
+(Defclass slime (monster)
   ())
 (defmethod initialize-instance :after ((e slime) &rest initargs)
   (declare (ignore initargs))
@@ -632,7 +649,7 @@
 	  id :slime)))
 
 
-(defclass dragon (e-unit)
+(defclass dragon (monster)
   ())
 (defmethod initialize-instance :after ((e dragon) &rest initargs)
   (declare (ignore initargs))
@@ -651,15 +668,17 @@
 
 (defmethod initialize-instance :after ((e p-warrior) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move weapon armor team
-	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move weapon armor team level
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "戦士"
 	  tec 7 con 10 mnd 4
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res 
+	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
+	  hp (+ vit 3) mp res
 	  team :player
 	  weapon (item-make +w_knife+)
 	  armor (item-make +a_cloth_armor+)
@@ -676,14 +695,17 @@
 
 (defmethod initialize-instance :after ((e p-sorcerer) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor
-	        hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor level magic-power
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "魔術師"
 	  tec 7 con 4 mnd 10
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
+	  hit-value (+ 0 dex-bonus) avoid-value (+ 0 agi-bonus)
+	  magic-power (+ level int-bonus)
 	  hp (+ vit 3) mp (+ res 3) 
 	  move 3
 	  team :player
@@ -701,14 +723,17 @@
 
 (defmethod initialize-instance :after ((e p-priest) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor
-	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor level magic-power
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "僧侶"
 	  tec 4 con 8 mnd 9
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
+	  hit-value (+ 0 dex-bonus) avoid-value (+ 0 agi-bonus)
+	  magic-power (+ level int-bonus)
 	  hp (+ vit 3) mp (+ res 3) 
 	  move 3
 	  team :player
@@ -725,15 +750,17 @@
 
 (defmethod initialize-instance :after ((e p-archer) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor
-	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor level
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "射手"
 	  tec 8 con 4 mnd 9
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res 
+	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
+	  hp (+ vit 3) mp res
 	  move 3
 	  team :player
 	  weapon (item-make +w_short_bow+)
@@ -749,15 +776,17 @@
 
 (defmethod initialize-instance :after ((e p-s-knight) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor
-	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level 
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "騎士"
 	  tec (dice 2 6) con (dice 2 6) mnd (dice 2 6)
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res 
+	  hp (+ vit 3) mp res
+	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
 	  move 5
 	  team :player
 	  weapon (item-make +w_javelin+)
@@ -773,15 +802,17 @@
 
 (defmethod initialize-instance :after ((e p-p-knight) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor
-	        hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "天馬騎士"
 	  tec (dice 2 6) con (dice 2 6) mnd (dice 2 6)
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res 
+	  hp (+ vit 3) mp res
+	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
 	  move 5
 	  team :player
 	  weapon (item-make +w_javelin+)
@@ -797,15 +828,17 @@
 
 (defmethod initialize-instance :after ((e p-thief) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor
-	        hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus) e
+  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level
+	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
+	       hit-value avoid-value) e
     (setf job-name "盗賊"
 	  tec 10 con 7 mnd 4
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res 
+	  hp (+ vit 3) mp res
+	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
 	  move 4
 	  team :player
 	  weapon (item-make +w_knife+)

@@ -22,9 +22,9 @@
 
 (defun init-key ()
   (with-slots (space1 a key1 key2 key3 key4 key5 key0 w s d) *keystate*
-    (setf space1 nil
+    (setf space1 nil a nil
 	  ;;key1 nil key2 nil key3 nil key4 nil key5 nil key0 nil
-	  ;;w nil a nil d nil s nil
+	  ;;w nil  d nil s nil
 	  )))
 
 (defun bind-mouse-event ()
@@ -676,21 +676,51 @@
 				       r #(1 1 1 1 1 1 1 1 1) nil nil nil t))
 	   temparea))))))
 
-;;--------------ダメージ------------------------------------------------
+;;--------------ダメージ計算------------------------------------------------
 ;;物理ダメージ計算
-(defun physical-damage-calc (atker defender)
-  (with-slots (weapon str int) atker
-    (with-slots (armor res vit x y) defender
-      (with-slots (dmg-list critical) weapon
-	(let* ((dmg-num 0))
-	  (loop :for dice1 = (dice 1 6)
-		:for dice2 = (dice 1 6)
-		:when (and (= dice1 1) (= dice2 1))
-		  :do (return dmg-num)
-		:do (incf dmg-num (nth (+ dice1 dice2) dmg-list))
-		:when (< (+ dice1 dice2) critical)
-		  :do (return dmg-num)))))))
+(defun %physical-damage-calc (critical dmg-table def-num)
+  (let* ((dmg-num 0))
+    (loop :for dice1 = (dice 1 6)
+	  :for dice2 = (dice 1 6)
+	  :when (and (= dice1 1) (= dice2 1))
+	    :do (return (max (- dmg-num def-num) 0))
+	  :do (incf dmg-num (nth (+ dice1 dice2) dmg-table))
+	  :when (< (+ dice1 dice2) critical)
+	    :do (return (max (- dmg-num def-num) 0)))))
 
+
+;;プレイヤーユニットの攻撃と敵人型ユニットの防御
+(defmethod physical-damage-calc ((atker unit) (defender e-unit))
+  (with-slots (weapon str int) atker
+    (with-slots (armor shield) defender
+      (with-slots (dmg-table critical) weapon
+	(let* ((def-num 0))
+	  (when armor
+	    (incf def-num (def armor)))
+	  (when shield
+	    (incf def-num (def shield)))
+	  (%physical-damage-calc critical dmg-table def-num))))))
+
+;;プレイヤーユニットの攻撃とモンスター型ユニットの防御
+(defmethod physical-damage-calc ((atker unit) (defender monster))
+  (with-slots (weapon str int) atker
+    (with-slots (def) defender
+      (with-slots (dmg-table critical) weapon
+	(%physical-damage-calc critical dmg-table def)))))
+
+;;モンスター型の攻撃とプレイヤーユニットの防御
+(defmethod physical-damage-calc ((atker monster) (defender unit))
+  (with-slots (atk-point) atker
+    (with-slots (armor shield) defender
+      (let* ((def-num 0)
+	     (dice1 (dice 1 6))
+	     (dice2 (dice 1 6)))
+	(when armor
+	  (incf def-num (def armor)))
+	(when shield
+	  (incf def-num (def shield)))
+	(- (+ dice1 dice2 atk-point) def-num)))))
+;;----------------------------------------------------------------------------------------
 ;;ダメージフォント
 (defun create-damage-font (atker defender dmg-num)
   (with-slots (pos) defender
@@ -727,18 +757,12 @@
 
 ;;物理ダメージ判定
 (defun physical-damage-hit (atker defender)
-  (with-slots (dex-bonus) atker
-    (with-slots (agi-bonus) defender
+  (with-slots (dex-bonus hit-value) atker
+    (with-slots (agi-bonus avoid-value) defender
       (let* ((hit1 (dice 1 6))
 	     (hit2 (dice 1 6))
 	     (avoid1 (dice 1 6))
-	     (avoid2 (dice 1 6))
-	     (hit-bonus (if (or (eq (id atker) :sorcerer) (eq (id atker) :priest))
-			    dex-bonus
-			    (+ (level atker) dex-bonus)))
-	     (avoid-bonus (if (or (eq (id defender) :sorcerer) (eq (id defender) :priest))
-			      dex-bonus
-			      (+ (level defender) dex-bonus))))
+	     (avoid2 (dice 1 6)))
 	(cond
 	  ;;命中判定1ゾロはミス
 	  ((and (= hit1 1) (= hit2 1))
@@ -753,9 +777,9 @@
 	  ((and (= hit1 6) (= hit2 6))
 	   (physical-damage-calc atker defender))
 	  ;;以下命中判定と回避判定の比べあい
-	  ((> (+ hit-bonus hit1 hit2) (+ avoid-bonus avoid1 avoid2))
+	  ((> (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
 	   (physical-damage-calc atker defender))
-	  ((<= (+ hit-bonus hit1 hit2) (+ avoid-bonus avoid1 avoid2))
+	  ((<= (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
 	   "ミス"))))))
 
 ;;ダメージ計算して表示する位置とか設定 TODO
@@ -766,7 +790,8 @@
 	(let ((dmg-num (cond
 			 ((or (eq atking-type :short)
 			      (eq atking-type :long))
-			  (physical-damage-hit atker defender)))))
+			  (physical-damage-hit atker defender))
+			 ((eq atking-type :magic)))))
 	  (push (create-damage-font atker defender dmg-num) dmg-font)
 	  (when (numberp dmg-num)
 	    ;;HPの増減
@@ -1459,10 +1484,10 @@
       (with-slots (weapon armor shield name) selected-unit
 	(when (equal equiped-unit name)
 	  (cond
-	    ((and weapon
-		  (eq (type-of item) 'weapondesc))
-	     (setf (equiped weapon) nil
-		   weapon nil))
+	    ;; ((and weapon
+	    ;; 	  (eq (type-of item) 'weapondesc))
+	    ;;  (setf (equiped weapon) nil
+	    ;; 	   weapon nil))
 	    ((and armor
 		  (eq (type-of item) 'armordesc))
 	     (setf (equiped armor) nil
@@ -1474,6 +1499,7 @@
 	  (create-item-btn)
 	  (create-next-prev-btn))))))
 
+;;装備変更画面でのイベント
 (Defun equip-menu-event ()
   (with-slots (a) *keystate*
     (with-slots (left right) *mouse*
@@ -1532,30 +1558,38 @@
 
 
 ;;------------------------------敵の行動-------------------------------------------------------
-;;一番近いプレイヤーキャラ見つける
+;;---------------------------------------------------------------------------------------------
+;;一番近いプレイヤーキャラ見つけ、攻撃か移動のみか判定
+(defun %get-nearest-target-and-self-action (x y rangemin rangemax targets)
+  (let ((nearest nil)
+	(a 1000))
+    (loop :for target :in targets
+	  :do  (let ((manh (manhatan-x-y x (x target) y (y target))))
+		 (when (>= a manh)
+		   (setf a manh
+			 nearest target))))
+    (if (>= rangemax a rangemin)
+	(values :atk nearest)
+	(values :move nearest))))
 
-(defun get-nearest-unit-and-self-action (self targets)
-  (with-slots (x y weapon) self
-    (let ((nearest nil)
-	  (a 1000))
-      (loop :for target :in targets
-	    :do  (let ((manh (manhatan-x-y x (x target) y (y target))))
-		   (when (>= a manh)
-		     (setf a manh
-			   nearest target))))
-      (if (>= (rangemax weapon) a (rangemin weapon))
-	  (values :atk nearest)
-	  (values :move nearest)))))
+;;モンスターの場合
+(defmethod get-nearest-target-and-self-action ((monster monster) targets)
+  (with-slots (x y rangemin rangemax) monster
+    (%get-nearest-target-and-self-action x y rangemin rangemax targets)))
 
-;;移動範囲からターゲットに一番近い場所を選ぶ
-(defun get-goal-from-movearea (self target)
+;;人型の場合
+(defmethod get-nearest-target-and-self-action ((unit e-unit) targets)
+  (with-slots (x y weapon) unit
+    (%get-nearest-target-and-self-action x y (rangemin weapon) (rangemax weapon) targets)))
+;;---------------------------------------------------------------------------------------------
+
+;;移動可能範囲からターゲットに一番近い場所を選ぶ
+(defun %get-goal-from-movearea (self target rangemin rangemax)
   (with-slots (movearea weapon state) self
     (with-slots (enemies) *battle-field*
       (with-slots (x y) target
 	(let ((goal nil)
-	      (a 1000)
-	      (rangemax (rangemax weapon))
-	      (rangemin (rangemin weapon)))
+	      (a 1000))
 	  (loop :for area :in movearea
 		:do (let ((manh (manhatan-x-y (car area) x (cadr area) y)))
 		      (when (and (>= a manh)
@@ -1569,6 +1603,26 @@
 	      (setf state :move))
 	  goal)))))
 
+;;モンスターの場合
+(defmethod get-goal-from-movearea ((monster monster) target)
+  (with-slots (rangemax rangemin) monster
+    (%get-goal-from-movearea monster target rangemin rangemax)))
+
+;;人型の場合
+(defmethod get-goal-from-movearea ((unit e-unit) target)
+  (with-slots (weapon) unit
+    (%get-goal-from-movearea unit target (rangemin weapon) (rangemax weapon))))
+;;---------------------------------------------------------------------------------------------
+;;モンスター型の攻撃タイプ
+(defmethod get-enemy-atking-type ((monster monster))
+  (atking-type monster))
+;;人型の攻撃タイプ
+(defmethod get-enemy-atking-type ((unit e-unit))
+  (with-slots (weapon) unit
+    (atking-type weapon)))
+;;---------------------------------------------------------------------------------------------
+
+
 ;;未行動の敵を順番に選ぶ
 (defun select-action-enemy ()
   (with-slots (selected-unit) *game*
@@ -1579,10 +1633,10 @@
 
 ;;移動だけか攻撃かその場で攻撃か
 (Defun select-move-or-attack ()
-  (with-slots (selected-unit action-state party) *game*
+  (with-slots (selected-unit action-state party temp-dmg) *game*
     (with-slots (move-paths atk-dir temp-pos pos atking-enemy state origin) selected-unit
-      ;;TODO targetの選びから 近い敵 HPの低い敵 etc
-      (multiple-value-bind (action target) (get-nearest-unit-and-self-action selected-unit party)
+      ;;TODO target選び 近い敵 HPの低い敵 etc
+      (multiple-value-bind (action target) (get-nearest-target-and-self-action selected-unit party)
 	(case action
 	  (:move
 	   (let ((goal (get-goal-from-movearea selected-unit target)))
@@ -1597,6 +1651,7 @@
 	  (:atk
 	   (setf action-state :atk-anime
 		 temp-pos (math:copy-vec2 pos)
+		 temp-dmg (damage-proc selected-unit target (get-enemy-atking-type selected-unit))
 		 atk-dir (get-atk-dir-unit selected-unit target)
 		 atking-enemy target)))
 	))))
@@ -1611,7 +1666,7 @@
 	     (select-move-or-attack)
 	     (setf state :end))))))
 
-
+;; TODO　敵もスキル使いたい
 (Defun update-enemies-action ()
   (select-action-enemy)
   (get-enemy-move-area))
