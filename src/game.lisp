@@ -677,16 +677,17 @@
 	   temparea))))))
 
 ;;--------------ダメージ計算------------------------------------------------
+
 ;;物理ダメージ計算
-(defun %physical-damage-calc (critical dmg-table def-num)
+(defun %damage-calc (critical dmg-table)
   (let* ((dmg-num 0))
     (loop :for dice1 = (dice 1 6)
 	  :for dice2 = (dice 1 6)
 	  :when (and (= dice1 1) (= dice2 1))
-	    :do (return (max (- dmg-num def-num) 0))
+	    :do (return dmg-num)
 	  :do (incf dmg-num (nth (+ dice1 dice2) dmg-table))
 	  :when (< (+ dice1 dice2) critical)
-	    :do (return (max (- dmg-num def-num) 0)))))
+	    :do (return  dmg-num ))))
 
 
 ;;プレイヤーユニットの攻撃と敵人型ユニットの防御
@@ -699,14 +700,14 @@
 	    (incf def-num (def armor)))
 	  (when shield
 	    (incf def-num (def shield)))
-	  (%physical-damage-calc critical dmg-table def-num))))))
+	  (max (- (%damage-calc critical dmg-table) def-num) 0))))))
 
 ;;プレイヤーユニットの攻撃とモンスター型ユニットの防御
 (defmethod physical-damage-calc ((atker unit) (defender monster))
   (with-slots (weapon str int) atker
     (with-slots (def) defender
       (with-slots (dmg-table critical) weapon
-	(%physical-damage-calc critical dmg-table def)))))
+	(max (- (%damage-calc critical dmg-table) def) 0)))))
 
 ;;モンスター型の攻撃とプレイヤーユニットの防御
 (defmethod physical-damage-calc ((atker monster) (defender unit))
@@ -719,7 +720,15 @@
 	  (incf def-num (def armor)))
 	(when shield
 	  (incf def-num (def shield)))
-	(- (+ dice1 dice2 atk-point) def-num)))))
+	(max (- (+ dice1 dice2 atk-point) def-num) 0)))))
+
+;;----------------------------------------------------------------------------------------
+;;魔法ダメージ計算
+(defun magic-damage-calc ()
+  (with-slots (selected-skill) *game*
+    (with-slots (critical dmg-table) selected-skill
+      (%damage-calc critical dmg-table))))
+;;----------------------------------------------------------------------------------------
 ;;----------------------------------------------------------------------------------------
 ;;ダメージフォント
 (defun create-damage-font (atker defender dmg-num)
@@ -737,22 +746,20 @@
 
 ;;魔法ダメージ判定
 (defun magic-damage-hit (atker defender)
-  (with-slots (int-bonus) atker
-    (with-slots (mnd-bonus) defender
-      (let* ((m-power (+ (level atker) int-bonus))
-	     (m1 (dice 1 6))
+  (with-slots (int-bonus magic-power) atker
+    (with-slots (res-bonus) defender
+      (let* ((m1 (dice 1 6))
 	     (m2 (dice 1 6))
-	     (mnd-res (+ (level defender) mnd-bonus))
+	     (mnd-res (+ (level defender) res-bonus))
 	     (res1 (dice 1 6))
-	     (res2 (dice 1 6))
-	     (dmg-num (damage-calc atker defender)))
+	     (res2 (dice 1 6)))
 	(cond
 	  ((and (= m1 1) (= m2 1))
 	   "ミス")
-	  ((> (+ m-power m1 m2) (+ mnd-res res1 res2))
-	   dmg-num)
-	  ((<= (+ m-power m1 m2) (+ mnd-res res1 res2))
-	   (floor dmg-num 2)))))))
+	  ((> (+ magic-power m1 m2) (+ mnd-res res1 res2))
+	    (magic-damage-calc))
+	  ((<= (+ magic-power m1 m2) (+ mnd-res res1 res2))
+	   (floor  (magic-damage-calc) 2)))))))
 
 
 ;;物理ダメージ判定
@@ -791,7 +798,8 @@
 			 ((or (eq atking-type :short)
 			      (eq atking-type :long))
 			  (physical-damage-hit atker defender))
-			 ((eq atking-type :magic)))))
+			 ((eq atking-type :magic)
+			  (magic-damage-hit atker defender)))))
 	  (push (create-damage-font atker defender dmg-num) dmg-font)
 	  (when (numberp dmg-num)
 	    ;;HPの増減

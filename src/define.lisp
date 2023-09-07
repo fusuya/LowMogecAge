@@ -590,6 +590,18 @@
    (state           :accessor state       :initform :title :initarg :state)))     ;;武器
 
 
+(defclass dagger-hood (monster)
+  ())
+(defmethod initialize-instance :after ((e dagger-hood) &rest initargs)
+  (declare (ignore initargs))
+  (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
+	       vit-bonus res-bonus hp maxhp mp maxmp) e
+    (setf job-name "ダガーフッド"
+	  move 5 hit-value 3 atk-point 2 avoid-value 1 def 1
+	  res-bonus 3 vit-bonus 2 hp 12 maxhp 12 mp 10 maxmp 10
+	  movecost #(1 -1 -1 2 2 3 -1 1 1)
+	  origin (gk:vec2 0 (* 32 +img-dagger-hood+))
+	  id :dagger-hood)))
 
 (defclass orc (monster)
   ())
@@ -1004,6 +1016,8 @@
    (target   :accessor target  :initform 0   :initarg :target)
    (element   :accessor element  :initform 0   :initarg :element)
    (power   :accessor power  :initform 0   :initarg :power)
+   (dmg-table   :accessor dmg-table  :initform 0   :initarg :dmg-table)
+   (critical   :accessor critical  :initform 0   :initarg :critical)
    (mp   :accessor mp  :initform 0   :initarg :mp)
    (status   :accessor status  :initform 0   :initarg :status)
    (depend   :accessor depend  :initform 0   :initarg :depend)
@@ -1125,10 +1139,12 @@
 (defparameter *skill-list*
   `(:heal ,(make-instance 'skill :name "ヒール" :target :ally :r 1 :mp 3 :rangemin 1 :rangemax 5
 				 :element :holy :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
-				 :max-frame 100 :interval 20 :atking-type :magic)
+				 :max-frame 100 :interval 20 :atking-type :magic :critical 99
+				 :dmg-table (nth 10 *default-damage-table-list*))
     :fire ,(make-instance 'skill :name "ファイア" :target :enemy :r 2 :mp 3 :rangemin 1 :rangemax 5
 				 :element :fire :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +fire+ 32))
-				 :max-frame 120 :interval 20 :atking-type :magic)
+				 :max-frame 120 :interval 20 :atking-type :magic
+				 :critical 10 :dmg-table (nth 10 *default-damage-table-list*))
     ))
 
 ;; (defun get-cell-data (cell data)
