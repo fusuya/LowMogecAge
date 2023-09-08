@@ -127,9 +127,9 @@
     (when (> 5 (length party))
       (let* ((weapon (job-init-weapon unit))
 	     (armor (item-make  +a_cloth_armor+))
-	     (chara (make-instance unit :job num :hp 30 :maxhp 30
+	     (chara (make-instance unit :job num ;;:hp 30 :maxhp 30
 				   ;;:weapon weapon
-					:vit 3 :str 7 :agi 2 :res 3 :int 3
+					;;:vit 3 :str 7 :agi 2 :res 3 :int 3
 					;;:armor armor
 					:state :inaction
 					:name (nth (random (length *name-list*)) *name-list*))))
@@ -738,10 +738,11 @@
 	   (x-dir (if (eq (atk-dir atker) :left) :left :right))
 	   (dmg (make-instance 'dmg-font :pos (gk:vec2 dmg-x dmg-y)
 			       :dmg-num  dmg-num :y-dir :up :x-dir x-dir
-			       :miny dmg-y :maxy (+ dmg-y 15))))
-      (if (eq (atktype (weapon atker)) :heal)
-	  (setf (color dmg) (gk:vec4 0 1 0 1))
-	  (setf (color dmg) (gk:vec4 1 1 1 1)))
+					 :miny dmg-y :maxy (+ dmg-y 15)
+					 :font (if (numberp dmg-num)
+						   *font28*
+						   *font24*))))
+      (setf (color dmg) (gk:vec4 1 1 1 1))
       dmg)))
 
 ;;魔法ダメージ判定
@@ -770,6 +771,7 @@
 	     (hit2 (dice 1 6))
 	     (avoid1 (dice 1 6))
 	     (avoid2 (dice 1 6)))
+	(format t "hit1:~a hit2:~a avoid1:~a avoid2:~a~%" hit1 hit2 avoid1 avoid2)
 	(cond
 	  ;;命中判定1ゾロはミス
 	  ((and (= hit1 1) (= hit2 1))
@@ -789,7 +791,7 @@
 	  ((<= (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
 	   "ミス"))))))
 
-;;ダメージ計算して表示する位置とか設定 TODO
+;;ダメージ計算して表示する位置とか設定 ダメージフォントオブジェクトを帰す  TODO
 (defun damage-proc (atker defender atking-type)
   (with-slots (dmg-font) *game*
     (with-slots (dex-bonus) atker
@@ -800,14 +802,14 @@
 			  (physical-damage-hit atker defender))
 			 ((eq atking-type :magic)
 			  (magic-damage-hit atker defender)))))
-	  (push (create-damage-font atker defender dmg-num) dmg-font)
 	  (when (numberp dmg-num)
 	    ;;HPの増減
 	    (decf (hp defender) dmg-num)) ;;hpを減らす
 	  (cond
 	    ((>= 0 hp) ;; hpが0以下になったら死亡
 	     ;;(setf state :dead)))))))
-	   )))))))
+	     ))
+	  (create-damage-font atker defender dmg-num))))))
 	   ;;(player-get-exp atker defender)
 	   ;;(when (and (eq (team atker) :player)
 	;;;	      (= (random 2) 1))
@@ -872,10 +874,10 @@
 
 ;;攻撃アニメ終わるまでループ TODO プレイヤーのターンか敵のターンで違う
 (defun update-atk-anime (atk-unit)
-  (with-slots (action-state selected-unit ) *game*
+  (with-slots (action-state selected-unit temp-dmg dmg-font) *game*
     (with-slots (atk-frame atking-enemy temp-pos pos (unit-state state) team origin) atk-unit
       (when (= 7 atk-frame)
-	(damage-proc atk-unit atking-enemy))
+	(push temp-dmg dmg-font))
       (update-atk-img atk-unit atk-frame)
       (if (and (= (gk:x temp-pos) (gk:x pos))
 	       (= (gk:y temp-pos) (gk:y pos)))
@@ -1350,7 +1352,7 @@
 			      (atk-dir selected-unit) (get-atk-dir diffx diffy)
 			      action-state :atk-anime
 			      atking-enemy e
-			      temp-dmg (damage-proc selected-unit e (atking-type weapon)))
+			      temp-dmg (damage-proc selected-unit e (atktype weapon)))
 			(init-unit-atked-pos enemies)
 			(return)))))))))
 
@@ -1653,6 +1655,7 @@
 			      action-state :move-anime)
 			(when (eq state :move-atk)
 			  (setf atk-dir (get-atk-dir-xy target (car (last move-paths)))
+				temp-dmg (damage-proc selected-unit target (get-enemy-atking-type selected-unit))
 				atking-enemy target)))
 		 (setf state :end
                        (gk:x  origin) (* +action-end+ *origin-obj-w*)))))

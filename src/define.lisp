@@ -457,6 +457,7 @@
    (y-dir    :accessor y-dir     :initform :up   :initarg :y-dir)
    (x-dir    :accessor x-dir     :initform :left :initarg :x-dir)
    (color    :accessor color     :initform :left :initarg :color)
+   (font     :accessor font      :initform nil :initarg :font)
    ))
 
 (defclass itemtext (dmg-font)
@@ -469,25 +470,25 @@
    (maxhp     :accessor maxhp     :initform 30    :initarg :maxhp)
    (mp        :accessor mp        :initform 30    :initarg :mp)
    (maxmp        :accessor maxmp        :initform 30    :initarg :maxmp)
-   (agi       :accessor agi       :initform 30    :initarg :agi)
-   (vit       :accessor vit       :initform 30    :initarg :vit)
-   (str       :accessor str       :initform 30    :initarg :str)
-   (mnd       :accessor mnd       :initform 30    :initarg :mnd)
-   (int       :accessor int       :initform 30    :initarg :int)
-   (con       :accessor con       :initform 30    :initarg :con)
-   (tec       :accessor tec       :initform 30    :initarg :tec)
-   (dex       :accessor dex       :initform 30    :initarg :dex)
-   (res       :accessor res       :initform 30    :initarg :res)
+   (con       :accessor con       :initform 30    :initarg :con) ;;体
+   (tec       :accessor tec       :initform 30    :initarg :tec) ;;技
+   (mnd       :accessor mnd       :initform 30    :initarg :mnd) ;;心
+   (dex       :accessor dex       :initform 30    :initarg :dex) ;;器用度
+   (agi       :accessor agi       :initform 30    :initarg :agi) ;;敏捷度
+   (str       :accessor str       :initform 30    :initarg :str) ;;筋力
+   (vit       :accessor vit       :initform 30    :initarg :vit) ;;生命力
+   (int       :accessor int       :initform 30    :initarg :int) ;;知力
+   (res       :accessor res       :initform 30    :initarg :res) ;;精神力
    (agi-bonus       :accessor agi-bonus       :initform 30    :initarg :agi-bonus)
    (str-bonus       :accessor str-bonus       :initform 30    :initarg :str-bonus)
    (dex-bonus       :accessor dex-bonus       :initform 30    :initarg :dex-bonus)
-   (vit-bonus       :accessor vit-bonus       :initform 30    :initarg :vit-bonus)
-   (int-bonus       :accessor int-bonus       :initform 30    :initarg :int-bonus)
+   (vit-bonus       :accessor vit-bonus       :initform 30    :initarg :vit-bonus) ;;モンスターの場合生命抵抗力として使う
+   (int-bonus       :accessor int-bonus       :initform 30    :initarg :int-bonus) ;;モンスターの場合精神抵抗力として使う
    (res-bonus       :accessor res-bonus       :initform 30    :initarg :res-bonus)
-   (hit-value       :accessor hit-value       :initform 0    :initarg :hit-value)
-   (avoid-value       :accessor avoid-value       :initform 0    :initarg :avoid-value)
-   (magic-power       :accessor magic-power       :initform 0    :initarg :magic-power)
-   (level        :accessor level        :initform 30    :initarg :level)
+   (hit-value       :accessor hit-value       :initform 0    :initarg :hit-value) ;;命中基準値
+   (avoid-value       :accessor avoid-value       :initform 0    :initarg :avoid-value) ;;回避基準値
+   (magic-power       :accessor magic-power       :initform 0    :initarg :magic-power) ;;魔力
+   (level        :accessor level        :initform 1    :initarg :level)
    (expe      :accessor expe      :initform 0     :initarg :expe) ;;もらえる経験値orプレイヤーの所持経験値
    (lvup-exp  :accessor lvup-exp  :initform 50   :initarg :lvup-exp))) ;;次のレベルアップに必要な経験値
 
@@ -566,6 +567,7 @@
 
 (defclass monster (e-unit)
   ((def         :accessor def       :initform nil :initarg :def)
+   (atk-point         :accessor atk-point       :initform 0 :initarg :atk-point)
    (rangemin         :accessor rangemin       :initform 1 :initarg :rangemin)
    (rangemax         :accessor rangemax       :initform 1 :initarg :rangemax)))
 
@@ -608,12 +610,13 @@
 
 (defmethod initialize-instance :after ((e orc) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move) e
+  (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
     (setf job-name "オーク"
-	  move 4
+	  move 4 hit-value 4 atk-point 3 avoid-value 4 def 2
+	  res-bonus 5 vit-bonus 4 hp 28 maxhp 28 mp 15 maxmp 15
+	  rangemin 1 rangemax 1 atking-type :short
 	  movecost #(1 -1 -1 2 2 3 -1 1 1)
-	  lvuprate '(:hp 70 :str 90 :vit 70 :agi 20 :int 10 :res 20)
-	  canequip  '(:spear :item :armor)
 	  origin (gk:vec2 0 (* 32 +img-orc+))
 	  id :orc)))
 
@@ -625,12 +628,13 @@
 
 (defmethod initialize-instance :after ((e hydra) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move) e
+  (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
     (setf job-name "ヒドラ"
-	  move 3
+	  move 3 hit-value 14 atk-point 15 avoid-value 13 def 13
+	  res-bonus 13 vit-bonus 14 hp 106 maxhp 106 mp 44 maxmp 44
+	  rangemin 1 rangemax 1 atking-type :short
 	  movecost #(1 -1 -1 2 3 3 1 1 1)
-	  lvuprate '(:hp 90 :str 50 :vit 80 :agi 20 :int 10 :res 30)
-	  canequip  '(:item :armor)
 	  origin (gk:vec2 0 (* 32 +img-hydra+))
 	  id :hydara )))
 
@@ -638,12 +642,13 @@
   ())
 (defmethod initialize-instance :after ((e brigand) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move rangemin rangemax atking-type) e
+  (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
     (setf job-name "ブリガンド"
+	  hit-value 4 atk-point 2 avoid-value 3 def 3
+	  res-bonus 3 vit-bonus 4 hp 20 maxhp 20 mp 10 maxmp 10
 	  move 3 rangemin 2 rangemax 5 atking-type :long
 	  movecost  #(1 -1 -1 2 2 3 -1 2 1)
-	  lvuprate '(:hp 70 :str 60 :vit 50 :agi 40 :int 10 :res 40)
-	  canequip  '(:bow :item :armor)
 	  origin (gk:vec2 0 (* 32 +img-brigand+))
 	  id :brigand )))
 
@@ -651,12 +656,13 @@
   ())
 (defmethod initialize-instance :after ((e slime) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move) e
+  (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
     (setf job-name "スライム"
-	  move 3
+	  move 3 hit-value 3 atk-point 1 avoid-value 4 def 3
+	  res-bonus 3 vit-bonus 3 hp 13 maxhp 13 mp 0 maxmp 0
+	  rangemin 1 rangemax 1 atking-type :short
 	  movecost  #(1 -1 -1 2 2 2 2 1 1)
-	  lvuprate '(:hp 50 :str 30 :vit 40 :agi 30 :int 10 :res 30)
-	  canequip  '(:spear :item :armor)
 	  origin (gk:vec2 0 (* 32 +img-slime+))
 	  id :slime)))
 
@@ -665,12 +671,13 @@
   ())
 (defmethod initialize-instance :after ((e dragon) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move) e
+  (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
     (setf job-name "ドラゴン"
-	  move 4
+	  move 4 hit-value 17 atk-point 18 avoid-value 15 def 14
+	  res-bonus 17 vit-bonus 17 hp 133 maxhp 13 mp 84 maxmp 84
+	  rangemin 1 rangemax 1 atking-type :short
 	  movecost  #(1 -1 -1 2 2 2 2 1 1)
-	  lvuprate '(:hp 90 :str 60 :vit 80 :agi 30 :int 60 :res 60)
-	  canequip  '(:item :armor)
 	  origin (gk:vec2 0 (* 32 +img-dragon+))
 	  id :dragon)))
 
@@ -1052,7 +1059,7 @@
    (itemnum        :accessor itemnum      :initform nil :initarg :itemnum)))
 
 (defclass weapondesc (itemdesc)
-  ((damage-table        :accessor damage-table       :initform 0   :initarg :damage-table)))
+  ((dmg-table        :accessor dmg-table       :initform 0   :initarg :dmg-table)))
 
 
 (defclass armordesc (itemdesc)
@@ -1093,6 +1100,7 @@
 (defvar *font14* nil)
 (defvar *font16* nil)
 (defvar *font18* nil)
+(defvar *font20* nil)
 (defvar *font24* nil)
 (defvar *font28* nil)
 (defvar *font32* nil)
@@ -1106,6 +1114,7 @@
 (defun set-font ()
   (setf *font24* (gk:make-font :mplus 24)
 	*font18* (gk:make-font :mplus 18)
+	*font20* (gk:make-font :mplus 20)
 	*font16* (gk:make-font :mplus 16)
 	*font14* (gk:make-font :mplus 14)
 	*font12* (gk:make-font :mplus 12)
@@ -1133,6 +1142,59 @@
     (:img      (img      (aref *jobdescs* job)))))
 
 
+(defparameter *default-damage-table-list*
+  '((0 0 0 0 0 0 1 2 2 3 3 4 4)
+    (0 0 0 0 0 0 1 2 3 3 3 4 4)
+    (0 0 0 0 0 0 1 2 3 4 4 4 4)
+    (0 0 0 0 0 1 1 2 3 4 4 4 5)
+    (0 0 0 0 0 1 2 2 3 4 4 5 5)
+    (0 0 0 0 1 1 2 2 3 4 5 5 5)
+    (0 0 0 0 1 1 2 3 3 4 5 5 5)
+    (0 0 0 0 1 1 2 3 4 4 5 5 6)
+    (0 0 0 0 1 2 2 3 4 4 5 6 6)
+    (0 0 0 0 1 2 3 3 4 4 5 6 7)
+    (0 0 0 1 1 2 3 3 4 5 5 6 7)
+    (0 0 0 1 2 2 3 3 4 5 6 6 7)
+    (0 0 0 1 2 2 3 4 4 5 6 6 7)
+    (0 0 0 1 2 3 3 4 4 5 6 7 7)
+    (0 0 0 1 2 3 4 4 4 5 6 7 8)
+    (0 0 0 1 2 3 4 4 5 5 6 7 8)
+    (0 0 0 1 2 3 4 4 5 6 7 7 8)
+    (0 0 0 1 2 3 4 5 5 6 7 7 8)
+    (0 0 0 1 2 3 4 5 6 6 7 7 8)
+    (0 0 0 1 2 3 4 5 6 7 7 8 9)
+    (0 0 0 1 2 3 4 5 6 7 8 9 10)
+    (0 0 0 1 2 3 4 6 6 7 8 9 10)
+    (0 0 0 1 2 3 5 6 6 7 8 9 10)
+    (0 0 0 2 2 3 5 6 7 7 8 9 10)
+    (0 0 0 2 3 4 5 6 7 7 8 9 10)
+    (0 0 0 2 3 4 5 6 7 8 8 9 10)
+    (0 0 0 2 3 4 5 6 8 8 9 9 10)
+    (0 0 0 2 3 4 6 6 8 8 9 9 10)
+    (0 0 0 2 3 4 6 6 8 9 9 10 10)
+    (0 0 0 2 3 4 6 7 8 9 9 10 10)
+    (0 0 0 2 4 4 6 7 8 9 10 10 10)
+    (0 0 0 2 4 5 6 7 8 9 10 10 11)
+    (0 0 0 3 4 5 6 7 8 10 10 10 11)
+    (0 0 0 3 4 5 6 8 8 10 10 10 11)
+    (0 0 0 3 4 5 6 8 9 10 10 11 11)
+    (0 0 0 3 4 5 7 8 9 10 10 11 12)
+    (0 0 0 3 5 5 7 8 9 10 11 11 12)
+    (0 0 0 3 5 6 7 8 9 10 11 12 12)
+    (0 0 0 3 5 6 7 8 10 10 11 12 13)
+    (0 0 0 4 5 6 7 8 10 11 11 12 13)
+    (0 0 0 4 5 6 7 9 10 11 11 12 13)
+    (0 0 0 4 6 6 7 9 10 11 12 12 13)
+    (0 0 0 4 6 7 7 9 10 11 12 13 13)
+    (0 0 0 4 6 7 8 9 10 11 12 13 14)
+    (0 0 0 4 6 7 8 10 10 11 12 13 14)
+    (0 0 0 4 6 7 9 10 10 11 12 13 14)
+    (0 0 0 4 6 7 9 10 10 12 13 13 14)
+    (0 0 0 4 6 7 9 10 11 12 13 13 15)
+    (0 0 0 4 6 7 9 10 12 12 13 13 15)
+    (0 0 0 4 6 7 10 10 12 12 13 14 15)
+    (0 0 0 4 6 8 10 10 12 12 13 15 15)))
+
 ;;　スキル
 (my-enum +heal+ +fire+)
 
@@ -1146,6 +1208,8 @@
 				 :max-frame 120 :interval 20 :atking-type :magic
 				 :critical 10 :dmg-table (nth 10 *default-damage-table-list*))
     ))
+
+
 
 ;; (defun get-cell-data (cell data)
 ;;   (case data

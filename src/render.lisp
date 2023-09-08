@@ -100,8 +100,8 @@
 (defun draw-dmg-font ()
   (with-slots (dmg-font) *game*
     (loop :for dmg :in dmg-font
-	  :do (with-slots (pos dmg-num color) dmg
-		(draw-stroke-text (format nil "~a" dmg-num) (gk:x pos) (gk:y pos) (gk:vec4 0 0 0 1) color *font28*)))))
+	  :do (with-slots (pos dmg-num color font) dmg
+		(draw-stroke-text (format nil "~a" dmg-num) (gk:x pos) (gk:y pos) (gk:vec4 0 0 0 1) color font)))))
 
 ;;---------------battle-field----------------------------------------------------
 ;;*objs-img*の描画
@@ -190,43 +190,78 @@
 	    (draw-cell-info select-cell))))))
 
 ;;-----------------------------------------------------------------------------------
+;;未行動可行動済みか文字列ゲット
+(defun get-unit-state-string (unit)
+  (with-slots (state) unit
+    (cond ((eq state :inaction)
+	   (values "未行動" (gk:vec4 0 1 0 1)))
+	  ((eq state :end)
+	   (values "行動済" (gk:vec4 1 1 0 1)))
+	  ((eq state :atk)
+	   (values "攻撃中" (gk:vec4 0 1 1 1))))))
+
+
 ;;ユニット情報
-(defun draw-unit-info (e)
-  (with-slots (hp maxhp str agi vit res int name state) e
+(defmethod draw-unit-data ((e unit) rect-pos-y text-x)
+  (with-slots (hp maxhp str agi vit res int name state dex mp maxmp avoid-value level) e
+      (let* ((font *font20*)
+	     (bottom-y (+ rect-pos-y 10))
+	     (line-width 16))
+	(multiple-value-bind (act-str act-color) (get-unit-state-string e)
+	  (gk:draw-text (format nil "~a" act-str) (gk:vec2 text-x bottom-y) :font font :fill-color act-color))
+	(gk:draw-text (format nil "精神力: ~a" res) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 知力 : ~a" int)   (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "器用度: ~a" dex)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "敏捷度: ~a" agi)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "生命力: ~a" vit) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 筋力 : ~a" str)   (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "  MP  :~a/~a" mp maxmp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "  HP  :~a/~a" hp maxhp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "名前 :~a" name)  (gk:vec2 text-x (incf bottom-y 17)) :font *font18* :fill-color (gk:vec4 1 1 1 1))
+	)))
+
+;;モンスターのユニットデータ
+(defmethod draw-unit-data ((e monster) rect-pos-y text-x)
+  (with-slots (hp maxhp hit-value avoid-value vit-bonus res-bonus name state def mp maxmp atk-point) e
     (with-slots (x) *mouse*
-      (let* ((rect-w (max 98 (* (length name) 22)))
-	     (rect-h 170)
-	     (rect-margin 5)
-	     (rect-pos-y (- (/ *window-h* 1.5) rect-h rect-margin))
-	     (rect-pos (if (>= *window-center* x)
-			     (gk:vec2 (- (/ *window-w* 1.5) rect-w rect-margin) rect-pos-y)
-			     (gk:vec2 rect-margin rect-pos-y)))
-	     (text-x (if (>= *window-center* x)
-			 (+ (- (/ *window-w* 1.5) rect-w) 1)
-			 10))
-	     (act-str nil)
-	     (act-color nil))
-	(cond ((eq state :inaction)
-	       (setf act-str "未行動"
-		     act-color (gk:vec4 0 1 0 1)))
-	      ((eq state :end)
-	       (setf act-str "行動済"
-		     act-color (gk:vec4 1 1 0 1)))
-	      ((eq state :atk)
-	       (setf act-str "攻撃中"
-		     act-color (gk:vec4 0 1 1 1))))
-	(gk:draw-rect rect-pos rect-w rect-h :fill-paint (gk:vec4 0 0 0 1)
-					     :stroke-paint (gk:vec4 1 1 1 1) :thickness 5)
-	(gk:draw-text (format nil "名前:~a" name)  (gk:vec2 text-x (+ rect-pos-y 152)) :font *font18* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil " HP :~a/~a" hp maxhp)  (gk:vec2 text-x (+ rect-pos-y 130)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "物攻: ~a" str)   (gk:vec2 text-x (+ rect-pos-y 110)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "物防: ~a" vit) (gk:vec2 text-x (+ rect-pos-y 90)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "速さ: ~a" agi)  (gk:vec2 text-x (+ rect-pos-y 70)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "魔攻: ~a" int)   (gk:vec2 text-x (+ rect-pos-y 50)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "魔防: ~a" res) (gk:vec2 text-x (+ rect-pos-y 30)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "~a" act-str) (gk:vec2 text-x (+ rect-pos-y 10)) :font *font24* :fill-color act-color)))))
+      (let* ((font *font20*)
+	     (bottom-y (+ rect-pos-y 10))
+	     (line-width 16))
+	(multiple-value-bind (act-str act-color) (get-unit-state-string e)
+	  (gk:draw-text (format nil "~a" act-str) (gk:vec2 text-x bottom-y) :font font :fill-color act-color))
+	(gk:draw-text (format nil " 防護点 : ~a" def) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 回避力 : ~a" avoid-value) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 命中力 : ~a" hit-value)   (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "精神抵抗: ~a" res-bonus)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "生命抵抗: ~a" vit-bonus)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 打撃点 : ~a" atk-point) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "   MP   : ~a/~a" mp maxmp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "   HP   : ~a/~a" hp maxhp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "名前 :~a" name)  (gk:vec2 text-x (incf bottom-y 17)) :font *font18* :fill-color (gk:vec4 1 1 1 1))
+	))))
 
 
+;;ユニット情報の枠
+(defun draw-unit-info-box (rect-h rect-pos-y rect-margin rect-w name)
+  (with-slots (x) *mouse*
+    (let* ((rect-pos (if (>= *window-center* x)
+			 (gk:vec2 (- (/ *window-w* 1.5) rect-w rect-margin) rect-pos-y)
+			 (gk:vec2 rect-margin rect-pos-y))))
+      (gk:draw-rect rect-pos rect-w rect-h :fill-paint (gk:vec4 0 0 0 1)
+					   :stroke-paint (gk:vec4 1 1 1 1) :thickness 3))))
+
+;;ユニット情報表示
+(defun draw-unit-info (unit)
+  (with-slots (x) *mouse*
+    (let* ((rect-h 172)
+	   (rect-margin 5)
+	   (rect-pos-y (- (/ *window-h* 1.5) rect-h rect-margin))
+	   (rect-w (max 135 (* (length (name unit)) 26)))
+	   (text-x (if (>= *window-center* x)
+		       (+ (- (/ *window-w* 1.5) rect-w) 1)
+		       10)))
+      (draw-unit-info-box rect-h rect-pos-y rect-margin rect-w (name unit))
+      (draw-unit-data unit rect-pos-y text-x))))
 ;;---------------------enemy-----------------------------------------------------------
 
 
