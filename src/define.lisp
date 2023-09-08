@@ -39,7 +39,7 @@
 (defparameter *save3-day* nil)
 
 
-(gk:register-resource-package :keyword "../assets/")
+(gk:register-resource-package :keyword (merge-pathnames "assets/" (asdf:system-source-directory :lowmogecage)))
 
 
 (gk:define-font :mplus "font/mplus-1mn-regular.ttf")
