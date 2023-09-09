@@ -9,6 +9,7 @@
 		  (:file "world-map-data")
                   (:file "define")
 		  (:file "item")
+		  (:file "monster-data")
 		  (:file "name")
 		  (:file "astar")
 		  (:file "util")

@@ -522,9 +522,7 @@
 (my-enum +img-e-p-knight+ +img-e-thief+ +img-e-s-knight+ +img-e-archer+ +img-e-priest+ +img-e-sorcerer+
 	 +img-e-warrior+
 	 +img-p-p-knight+ +img-p-thief+ +img-p-s-knight+ +img-p-archer+ +img-p-priest+ +img-p-sorcerer+ +img-p-warrior+)
-(my-enum  +img-slime+ +img-orc+ +img-yote1+ +img-hydra+ +img-dragon+ +img-brigand+ +img-arrow-hood+ +img-dagger-hood+
-	  +img-sabel-hood+ +img-shield-hood+ +img-skeleton+ +img-zombie+ +img-dry-corpse+ +img-ghost+ +img-phantom+
-	  +img-gust+ +img-gust-knight+)
+
 
 ;;プレイヤー用
 (defclass unit (obj status anime)
@@ -964,52 +962,6 @@
 		    )))
 
 
-
-;;初期パーティ編成画面用枠
-(defparameter *init-party-edit-gamen-btn-pos-list*
-  '((40 110 180 150) (40 160 180 200) (40 210 180 250)
-    (40 260 180 300) (40 310 180 350) (40 360 180 400)
-    (40 410 180 450) (330 110 470 150) (330 160 470 200)
-    (330 210 470 250) (330 260 470 300) (330 310 470 350)
-    (540 400 680 470)
-    ))
-(defparameter *init-job1-x1* 40)
-(defparameter *init-job1-x2* 180)
-
-(defparameter *init-job1-y1* 110)
-(defparameter *init-job1-y2* 150)
-(defparameter *init-job2-y1* 160)
-(defparameter *init-job2-y2* 200)
-(defparameter *init-job3-y1* 210)
-(defparameter *init-job3-y2* 250)
-(defparameter *init-job4-y1* 260)
-(defparameter *init-job4-y2* 300)
-(defparameter *init-job5-y1* 310)
-(defparameter *init-job5-y2* 350)
-(defparameter *init-job6-y1* 360)
-(defparameter *init-job6-y2* 400)
-(defparameter *init-job7-y1* 410)
-(defparameter *init-job7-y2* 450)
-
-
-(defparameter *init-select-job1-x1* 330)
-(defparameter *init-select-job1-x2* 470)
-
-(defparameter *init-select-job1-y1* 110)
-(defparameter *init-select-job1-y2* 150)
-(defparameter *init-select-job2-y1* 160)
-(defparameter *init-select-job2-y2* 200)
-(defparameter *init-select-job3-y1* 210)
-(defparameter *init-select-job3-y2* 250)
-(defparameter *init-select-job4-y1* 260)
-(defparameter *init-select-job4-y2* 300)
-(defparameter *init-select-job5-y1* 310)
-(defparameter *init-select-job5-y2* 350)
-
-(defparameter *init-party-edit-end-x1* 540)
-(defparameter *init-party-edit-end-x1* 680)
-(defparameter *init-party-edit-end-x1* 400)
-(defparameter *init-party-edit-end-x1* 470)
 
 (defclass skill ()
   ((name       :accessor name      :initform nil :initarg :name)
