@@ -1,6 +1,6 @@
 (in-package :lowmogecage)
 ;;TODO アイテム装備 (ワールドマップ スクロール)　クエスト　買い物　町
-;; スキル　ヒール 複数ターゲット ダメージ計算 魔法ダメージ アイテムデータ修正
+;; スキル増やす ワールドマップからの戦闘 出現敵どうする
 
 (gk:defgame lowmogecage () ()
   (:viewport-width *window-w*)
@@ -234,15 +234,7 @@
 	   (mouse-xy (list mouse-x mouse-y)))
       (find mouse-xy area :test #'equal))))
 ;;--------------------------------------------------------------------------------
-;; skillの処理
-(defun skill-proc (skill caster targets)
-  (with-slots (power depend mp target) skill
-    (with-slots (int str) caster
-      (let ((fluc (if (eq target :ally) #'+ #'-))
-	    (dmg (+ power (if (eq depend :int) int str))))
-	(loop :for tar :in targets
-	      :do (with-slots (hp) tar
-		    (setf hp (funcall fluc hp dmg))))))))
+
 
 
 ;;------------------------------------------------------------------------------------
@@ -591,8 +583,9 @@
 
 ;;待機
 (defmethod click-command-btn ((btn wait-cmd-btn) unit)
-  (with-slots (btn-list) *game*
-    (setf btn-list nil)
+  (with-slots (btn-list action-state) *game*
+    (setf btn-list nil
+	  action-state :player-turn)
     (unit-action-end unit)))
 ;;----------------------------------------------------------------------------------
 ;;ユニット同氏のマンハッタン距離
@@ -666,7 +659,7 @@
 	    (y (floor y-for-obj 32)))
 	(setf temparea nil)
 	(cond
-	  ((= r 1)
+	  ((= r 0)
 	   (push (list x y) temparea)
 	   temparea)
 	  (t
@@ -729,9 +722,17 @@
     (with-slots (critical dmg-table) selected-skill
       (%damage-calc critical dmg-table))))
 ;;----------------------------------------------------------------------------------------
+;;被ダメージ処理 TODO 死亡判定
+(defun take-damage (defender dmg-num target-type)
+  (with-slots (maxhp hp) defender
+    (when (numberp dmg-num)
+      (if (eq target-type :ally)
+	  (setf hp  (min maxhp (+ hp dmg-num)))
+	  (setf hp  (- hp dmg-num))))))
+
 ;;----------------------------------------------------------------------------------------
 ;;ダメージフォント
-(defun create-damage-font (atker defender dmg-num)
+(defun create-damage-font (atker defender dmg-num target-type)
   (with-slots (pos) defender
     (let* ((dmg-x (+ (gk:x pos) 10))
 	   (dmg-y (+ (gk:y pos) 5))
@@ -742,7 +743,9 @@
 					 :font (if (numberp dmg-num)
 						   *font28*
 						   *font24*))))
-      (setf (color dmg) (gk:vec4 1 1 1 1))
+      (if (eq target-type :ally)
+	  (setf (color dmg) (gk:vec4 0 1 0.3 1))
+	  (setf (color dmg) (gk:vec4 1 1 1 1)))
       dmg)))
 
 ;;魔法ダメージ判定
@@ -751,7 +754,9 @@
     (with-slots (res-bonus) defender
       (let* ((m1 (dice 1 6))
 	     (m2 (dice 1 6))
-	     (mnd-res (+ (level defender) res-bonus))
+	     (mnd-res (if (eq (type-of defender) 'monster)
+			  res-bonus
+			  (+ (level defender) res-bonus)))
 	     (res1 (dice 1 6))
 	     (res2 (dice 1 6)))
 	(cond
@@ -793,31 +798,30 @@
 
 ;;ダメージ計算して表示する位置とか設定 ダメージフォントオブジェクトを帰す  TODO
 (defun damage-proc (atker defender atking-type)
-  (with-slots (dmg-font) *game*
-    (with-slots (dex-bonus) atker
-      (with-slots (x y pos obj-type hp atk-spd state agi-bonus) defender
-	(let ((dmg-num (cond
-			 ((or (eq atking-type :short)
-			      (eq atking-type :long))
-			  (physical-damage-hit atker defender))
-			 ((eq atking-type :magic)
-			  (magic-damage-hit atker defender)))))
-	  (when (numberp dmg-num)
-	    ;;HPの増減
-	    (decf (hp defender) dmg-num)) ;;hpを減らす
-	  (cond
-	    ((>= 0 hp) ;; hpが0以下になったら死亡
-	     ;;(setf state :dead)))))))
-	     ))
-	  (create-damage-font atker defender dmg-num))))))
-	   ;;(player-get-exp atker defender)
-	   ;;(when (and (eq (team atker) :player)
-	;;;	      (= (random 2) 1))
-	   ;;  (get-item atker)))
-	 ;; ((eq (atktype (weapon atker)) :heal)
-	  ;; (player-get-exp atker defender))))))
+  (with-slots (dex-bonus) atker
+    (with-slots (x y pos obj-type hp atk-spd state agi-bonus) defender
+      (let ((dmg-num (cond
+		       ((or (eq atking-type :short)
+			    (eq atking-type :long))
+			(physical-damage-hit atker defender))
+		       ((eq atking-type :magic)
+			(magic-damage-hit atker defender)))))
+	(take-damage defender dmg-num :enemy) ;; :ally以外ならマイナスダメージ
+	(create-damage-font atker defender dmg-num :enemy)))))
 
-
+;;-------------------------------------------------------------------------
+;; skillの処理
+(defun skill-proc (skill atker defender)
+  (with-slots (power depend mp target atking-type) skill
+    (let ((dmg-num (cond
+		     ((or (eq atking-type :short)
+			  (eq atking-type :long))
+		      (physical-damage-hit atker defender))
+		     ((eq atking-type :magic)
+		      (magic-damage-hit atker defender)))))
+      (take-damage defender dmg-num target)
+      (create-damage-font atker defender dmg-num target))))
+;;-------------------------------------------------------------------------
 
 ;;ダメージフォントの位置更新
 (defun update-damage-font ()
@@ -886,6 +890,7 @@
 		       atking-enemy nil
 		       temp-pos nil
 		       unit-state :end
+		       temp-dmg nil
 		       (gk:x origin) (* +action-end+ *origin-obj-w*))
 		 (if (eq team :player)
 		     (setf action-state :player-turn)
@@ -1159,8 +1164,9 @@
 
 ;;ターン終了ボタン押したとき
 (defun select-player-turn-end ()
-  (with-slots (party) *game*
+  (with-slots (party btn-list) *game*
     (print "nnnnndd")
+    (setf btn-list nil)
     (loop :for p :in party
 	  :do (setf (state p) :end
 		    (atked-pos p) nil))))
@@ -1185,11 +1191,14 @@
 
 ;;バトル中 味方or敵 ユニットをクリック
 (defun unit-click-in-battle () ;;TODO
-  (with-slots (party) *game*
+  (with-slots (party action-state) *game*
     (with-slots (enemies) *battle-field*
       ;;プレイヤーキャラを選択していなかった場合敵キャラを選択したか調べる
-      (unless (set-selected-unit party)
-	(set-selected-unit enemies)))))
+      (cond
+	((set-selected-unit party)
+	 (setf action-state :select-cmd-mode))
+	(t
+	 (set-selected-unit enemies))))))
 
 
 ;;クリックしたユニットに何かする
@@ -1239,9 +1248,7 @@
   (with-slots (party action-state btn-list) *game*
     (with-slots (enemies) *battle-field*
       (with-slots (weapon move-paths atk-dir pos) selected-unit
-	(let* ((click-cell (get-click-cell))
-	       (cell-xy (list (x click-cell) (y click-cell)))
-	       (click-enemy (find-if #'(lambda (unit) (collide-p *mouse* unit)) enemies))
+	(let* ((click-enemy (find-if #'(lambda (unit) (collide-p *mouse* unit)) enemies))
 	       (click-other-ally (find-if #'(lambda (unit) (collide-p *mouse* unit)) party))
 	       (select-command-btn (find-if (lambda (btn) (collide-p *mouse* btn)) btn-list)))
 	  (cond
@@ -1256,14 +1263,8 @@
 	    (click-enemy
 	     (setf btn-list nil)
 	     (unit-ready-move click-enemy  (move click-enemy))
-	     (setf (game/selected-unit *game*) click-enemy))
-	     ;;(atk-or-heal-to-clicked-unit selected-unit click-enemy enemies))
-	    ;;移動のみ ユニットがいない地形かつ移動範囲内をクリックした
-	    ;; ((find cell-xy (movearea selected-unit) :test #'equal)
-	    ;;  (setf move-paths (get-move-paths selected-unit cell-xy)
-	    ;; 	   (state selected-unit) :move
-	    ;; 	   action-state :move-anime)
-	    ;;  (init-unit-atked-pos enemies))
+	     (setf (game/selected-unit *game*) click-enemy
+		   action-state :player-turn))
 	    ))))))
 
 
@@ -1272,9 +1273,9 @@
   (with-slots (selected-unit) *game*
     (cond
       ;;プレイヤーキャラを選択している状態
-      ((and selected-unit
-            (eq (team selected-unit) :player))
-       (left-click-with-player-unit-selected selected-unit))
+      ;; ((and selected-unit
+      ;;       (eq (team selected-unit) :player))
+      ;;  (left-click-with-player-unit-selected selected-unit))
       (t
        (unit-click-in-battle)))))
 
@@ -1285,6 +1286,27 @@
       (selected-unit
        (setf selected-unit nil
 	     btn-list nil)))))
+
+;;-------------------------------------------------------------------------------------
+;;コマンド選択モード
+
+(defun select-cmd-mode-left-click-event ()
+  (with-slots (selected-unit) *game*
+    (left-click-with-player-unit-selected selected-unit)))
+
+(defun select-cmd-mode-right-click-event ()
+  (with-slots (action-state selected-unit btn-list) *game*
+    (cond
+      (selected-unit
+       (setf selected-unit nil
+	     action-state :player-turn
+	     btn-list nil)))))
+
+(defun select-cmd-mode-event ()
+  (with-slots (left right) *mouse*
+    (cond
+      (left (select-cmd-mode-left-click-event))
+      (right (select-cmd-mode-right-click-event)))))
 
 ;;------------------------------------------------------------------------------------
 ;; 移動モード クリックイベント
@@ -1302,7 +1324,7 @@
 ;;移動モード  右クリックイベント
 (defun move-mode-right-click-event ()
   (with-slots (selected-unit action-state) *game*
-    (setf action-state :player-turn
+    (setf action-state :select-cmd-mode
 	  (movearea selected-unit) nil)
     (create-action-command-btn selected-unit)))
 
@@ -1364,7 +1386,7 @@
       (init-unit-atked-pos (enemies *battle-field*))
       (cond
 	((eq state :inaction)
-	 (setf action-state :player-turn))
+	 (setf action-state :select-cmd-mode))
 	((eq state :normal-move)
 	 (setf action-state :after-move)))
       (create-action-command-btn selected-unit))))
@@ -1394,7 +1416,7 @@
 ;;左クリック
 (defun select-skill-mode-right-click-event ()
   (with-slots (btn-list action-state selected-unit) *game*
-    (setf action-state :player-turn
+    (setf action-state :select-cmd-mode
 	  btn-list nil)
     (create-action-command-btn selected-unit)))
 
@@ -1411,8 +1433,8 @@
 ;;クリック
 (defun skill-mode-left-click-event ()
   (with-slots (x-for-obj y-for-obj) *mouse*
-    (with-slots (selected-skill party action-state selected-unit) *game*
-      (with-slots (range target pos team scope) selected-skill
+    (with-slots (selected-skill party action-state selected-unit temp-dmg) *game*
+      (with-slots (range target pos team scope atking-type) selected-skill
 	(let* ((targets (if (eq target :ally) party (enemies *battle-field*)))
 	       (mouse-x (floor x-for-obj 32))
 	       (mouse-y (floor y-for-obj 32))
@@ -1426,10 +1448,12 @@
 			(push tar target-units))))
 	  (when (and target-units
 		     (find mouse-xy range :test #'equal))
+	    ;;ダメージフォントオブジェクト
+	    (loop :for target-enemy :in target-units
+		  :do (push (skill-proc selected-skill selected-unit target-enemy) temp-dmg))
 	    (setf action-state :skill-anime
 		  pos (gk:vec2 (* mouse-x 32) (* mouse-y 32))
 		  team :player)
-	    (skill-proc selected-skill selected-unit target-units)
 	    ))))))
 
 
@@ -1462,9 +1486,11 @@
 ;;------------------------------------------------------------------------------------
 ;; skill anime
 (defun update-skill-anime ()
-  (with-slots (selected-skill action-state selected-unit) *game*
+  (with-slots (selected-skill action-state selected-unit temp-dmg dmg-font) *game*
     (with-slots (interval frame max-frame origin team pos img) selected-skill
       (incf frame)
+      (when (= frame 7)
+	(setf dmg-font (copy-list temp-dmg)))
       (when (zerop (mod frame interval))
 	(setf (gk:x origin) (- 32 (gk:x origin)))
 	(when (>= frame max-frame)
@@ -1473,7 +1499,8 @@
 		(state selected-unit) :end
 		(selected-cmd selected-unit) nil
 		(gk:x (origin selected-unit)) (* +action-end+ *origin-obj-w*)
-		selected-unit nil)
+		selected-unit nil
+		temp-dmg nil)
 	  (if (eq team :player)
 	      (setf action-state :player-turn)
 	      (setf action-state :enemy-turn)))))))
@@ -1906,6 +1933,8 @@
 	 (:player-turn
 	  (battle-event)
 	  (turn-end?))
+	 (:select-cmd-mode
+	  (select-cmd-mode-event))
 	 (:move-mode
 	  (move-mode-event))
 	 (:after-move

@@ -488,7 +488,7 @@
    (hit-value       :accessor hit-value       :initform 0    :initarg :hit-value) ;;命中基準値
    (avoid-value       :accessor avoid-value       :initform 0    :initarg :avoid-value) ;;回避基準値
    (magic-power       :accessor magic-power       :initform 0    :initarg :magic-power) ;;魔力
-   (level        :accessor level        :initform 1    :initarg :level)
+   (level        :accessor level        :initform 2    :initarg :level)
    (expe      :accessor expe      :initform 0     :initarg :expe) ;;もらえる経験値orプレイヤーの所持経験値
    (lvup-exp  :accessor lvup-exp  :initform 50   :initarg :lvup-exp))) ;;次のレベルアップに必要な経験値
 
@@ -600,7 +600,7 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move weapon armor team level
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "戦士"
 	  tec 7 con 10 mnd 4
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
@@ -608,7 +608,7 @@
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
 	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
-	  hp (+ vit 3) mp res
+	  hp (+ vit 3)  mp res maxhp hp maxmp mp
 	  team :player
 	  weapon (item-make +w_knife+)
 	  armor (item-make +a_cloth_armor+)
@@ -627,7 +627,7 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor level magic-power
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "魔術師"
 	  tec 7 con 4 mnd 10
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
@@ -636,7 +636,7 @@
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
 	  hit-value (+ 0 dex-bonus) avoid-value (+ 0 agi-bonus)
 	  magic-power (+ level int-bonus)
-	  hp (+ vit 3) mp (+ res 3) 
+	  hp (+ vit 3) mp (+ res 3) maxhp hp maxmp mp
 	  move 3
 	  team :player
 	  weapon (item-make +w_mage_staff+)
@@ -655,7 +655,7 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor level magic-power
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "僧侶"
 	  tec 4 con 8 mnd 9
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
@@ -664,7 +664,7 @@
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
 	  hit-value (+ 0 dex-bonus) avoid-value (+ 0 agi-bonus)
 	  magic-power (+ level int-bonus)
-	  hp (+ vit 3) mp (+ res 3) 
+	  hp (+ vit 3) mp (+ res 3) maxhp hp maxmp mp
 	  move 3
 	  team :player
 	  weapon (item-make +w_mage_staff+)
@@ -682,7 +682,7 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move team weapon armor level
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "射手"
 	  tec 8 con 4 mnd 9
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
@@ -690,7 +690,7 @@
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
 	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
-	  hp (+ vit 3) mp res
+	  hp (+ vit 3) mp res maxhp hp maxmp mp
 	  move 3
 	  team :player
 	  weapon (item-make +w_short_bow+)
@@ -708,14 +708,14 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level 
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "騎士"
 	  tec (dice 2 6) con (dice 2 6) mnd (dice 2 6)
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res
+	  hp (+ vit 3) mp res maxhp hp maxmp mp
 	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
 	  move 5
 	  team :player
@@ -734,14 +734,14 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "天馬騎士"
 	  tec (dice 2 6) con (dice 2 6) mnd (dice 2 6)
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res
+	  hp (+ vit 3) mp res maxhp hp maxmp mp
 	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
 	  move 5
 	  team :player
@@ -760,14 +760,14 @@
   (declare (ignore initargs))
   (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level
 	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value) e
+	       hit-value avoid-value maxhp maxmp) e
     (setf job-name "盗賊"
 	  tec 10 con 7 mnd 4
 	  dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
 	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6))
 	  str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
 	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hp (+ vit 3) mp res
+	  hp (+ vit 3) mp res maxhp hp maxmp mp
 	  hit-value (+ level dex-bonus) avoid-value (+ level agi-bonus)
 	  move 4
 	  team :player
@@ -880,11 +880,11 @@
   ((name       :accessor name      :initform nil :initarg :name)
    (rangemin   :accessor rangemin  :initform 0   :initarg :rangemin)
    (rangemax   :accessor rangemax  :initform 0   :initarg :rangemax)
-   (atking-type    :accessor atking-type   :initform :atk :initarg :atking-type)
+   (atking-type    :accessor atking-type   :initform :magic :initarg :atking-type)
    (r   :accessor r  :initform 0   :initarg :r)
-   (scope   :accessor scope  :initform nil   :initarg :scope)
+   (scope   :accessor scope  :initform nil   :initarg :scope) ;;スキルの発動範囲
    (temparea   :accessor temparea  :initform nil   :initarg :temparea)
-   (range   :accessor range  :initform nil   :initarg :range)
+   (range   :accessor range  :initform nil   :initarg :range) ;;スキルの射程距離
    (target   :accessor target  :initform 0   :initarg :target)
    (element   :accessor element  :initform 0   :initarg :element)
    (power   :accessor power  :initform 0   :initarg :power)
@@ -1064,11 +1064,11 @@
 (my-enum +heal+ +fire+)
 
 (defparameter *skill-list*
-  `(:heal ,(make-instance 'skill :name "ヒール" :target :ally :r 1 :mp 3 :rangemin 1 :rangemax 5
+  `(:heal ,(make-instance 'skill :name "ヒール" :target :ally :r 0 :mp 3 :rangemin 1 :rangemax 5
 				 :element :holy :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
 				 :max-frame 100 :interval 20 :atking-type :magic :critical 99
 				 :dmg-table (nth 10 *default-damage-table-list*))
-    :fire ,(make-instance 'skill :name "ファイア" :target :enemy :r 2 :mp 3 :rangemin 1 :rangemax 5
+    :fire ,(make-instance 'skill :name "ファイア" :target :enemy :r 1 :mp 3 :rangemin 1 :rangemax 5
 				 :element :fire :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +fire+ 32))
 				 :max-frame 120 :interval 20 :atking-type :magic
 				 :critical 10 :dmg-table (nth 10 *default-damage-table-list*))
