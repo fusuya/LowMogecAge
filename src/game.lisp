@@ -21,8 +21,9 @@
     (setf left nil right nil)))
 
 (defun init-key ()
-  (with-slots (space1 a key1 key2 key3 key4 key5 key0 w s d) *keystate*
-    (setf space1 nil a nil
+  (with-slots (space1 a key1 key2 key3 key4 key5 key0 w s d c) *keystate*
+    (setf space1 nil c nil
+	  ;;a nil
 	  ;;key1 nil key2 nil key3 nil key4 nil key5 nil key0 nil
 	  ;;w nil  d nil s nil
 	  )))
@@ -50,7 +51,7 @@
 		      (setf right nil)))))
 
 (defun bind-key-event ()
-  (with-slots (space1 a key1 key2 key3 key4 key5 key0 w s d) *keystate*
+  (with-slots (space1 a key1 key2 key3 key4 key5 key0 w s d c) *keystate*
     (gk:bind-button :space :pressed
 		    (lambda ()
 		      (setf space1 t)))
@@ -63,6 +64,12 @@
     (gk:bind-button :a :released
 		    (lambda ()
 		      (setf a nil)))
+    (gk:bind-button :c :pressed
+		    (lambda ()
+		      (setf c t)))
+    (gk:bind-button :c :released
+		    (lambda ()
+		      (setf c nil)))
     (gk:bind-button :w :pressed
 		    (lambda ()
 		      (setf w t)))
@@ -155,7 +162,7 @@
 (defmethod gk:post-initialize ((app lowmogecage))
   (set-font)
   (bind-key-event)
-  (setf *game* (make-instance 'game :state :title
+  (setf *game* (make-instance 'game :state :world-map
 			      :item (create-item-n +w_max+)
 			      :world-pos (gk:vec2 200 400)
 				    :scroll (gk:vec2 0 0)
@@ -1538,11 +1545,11 @@
 
 ;;装備変更画面でのイベント
 (Defun equip-menu-event ()
-  (with-slots (a) *keystate*
+  (with-slots (c) *keystate*
     (with-slots (left right) *mouse*
       (with-slots (state btn-list) *game*
 	(cond
-	  (a (setf state :battle
+	  (c (setf state :battle
 		   btn-list nil))
 	  (left
 	   (loop :for btn :in btn-list
@@ -1556,11 +1563,11 @@
 ;;-----------------------------------------------------------------------
 ;;バトルエベント
 (defun battle-event ()
-  (with-slots (space1 a) *keystate*
+  (with-slots (space1 c) *keystate*
     (with-slots (left right) *mouse*
       (with-slots (selected-unit) *game*
 	(cond
-	  ((and a selected-unit)
+	  ((and c selected-unit)
 	   (open-equip-menu))
 	  (space1
 	   (select-player-turn-end))
@@ -1778,40 +1785,34 @@
       (when left
 	;;(setf move-goal (gk:vec2 (+ x (gk:x scroll)) (+ y (gk:y scroll))))
 	(let* ((arr-x (floor (+ x (gk:x scroll)) 32))
-	      (arr-y (floor (+ y (gk:y scroll)) 32))
-	       (goal (list arr-x arr-y))
-	       (startx (floor (gk:x world-pos) 32))
-	       (starty (floor (gk:y world-pos) 32))
-	       (start (list startx starty))
-	       (path ) (value ))
-	  (setf (values value path) (world-astar start goal *world-map-data* #(-1 1 1 1 1 1 1 1) nil *8-DIR* 100 100))
-	  (when (listp path)
-	    (print path)
-	    (setf move-paths path))
-	  (setf move-goal (gk:vec2 (+ x (gk:x scroll)) (+ y (gk:y scroll))))
-	  (print move-goal)
-	  (print world-pos)
-	)))))
+	       (arr-y (floor (+ y (gk:y scroll)) 32)))
+	  (when (/= (aref *world-map-data* arr-y arr-x) 0) ;;0:海
+	    (let* ((goal (list arr-x arr-y))
+		   (startx (floor (gk:x world-pos) 32))
+		   (starty (floor (gk:y world-pos) 32))
+		   (start (list startx starty))
+		   (path ) (value ))
+	      (setf (values value path) (world-astar start goal *world-map-data* #(-1 1 1 1 1 1 1 1) nil *8-DIR* 100 100))
+	      (when (listp path)
+		(print path)
+		(setf move-paths path))
+	      (setf move-goal (gk:vec2 (+ x (gk:x scroll)) (+ y (gk:y scroll))))
+	      (print move-goal)
+	      (print world-pos)
+	      )))))))
 
-;;ワールド上の地形ゲット ;;TODO pos
-(defun get-world-cell ()
-  (with-slots (scroll world-pos) *game*
-    (let* ((pos world-pos)
-	   (arr-x (floor (gk:x pos) 32))
-	   (arr-y (floor (gk:y pos) 32)))
-      (aref *world-map-data* arr-y arr-x))))
+
 
 ;;ワールド上の移動スピード
-(Defun get-world-move-speed ()
-  (with-slots (move) *game*
-    (let ((cell (get-world-cell)))
-      (case cell
-	(0 0.2)
-	(1 2)
-	(2 1)
-	(3 1)
-	(4 1)
-	(5 2)))))
+(Defun get-world-move-speed (pos)
+  (let ((cell (get-world-cell pos)))
+    (case cell
+      (0 0.2)
+      (1 2)
+      (2 1)
+      (3 1)
+      (4 1)
+      (5 2))))
 
 ;;ワールドユニット移動
 (defun update-world-unit-pos ()
@@ -1819,7 +1820,7 @@
     (when (and move-goal
 	       ;;(not (math:vec= move-goal world-pos))
 	       )
-      (let ((speed (get-world-move-speed)))
+      (let ((speed (get-world-move-speed world-pos)))
 	(cond
 	  ((> (gk:x world-pos) (gk:x move-goal))
 	   (decf (gk:x world-pos) speed))
@@ -1831,15 +1832,15 @@
 	  ((< (gk:y world-pos) (gk:y move-goal))
 	   (incf (gk:y world-pos) speed)))))))
 
-;;TODO
+;;TODO ワールドマップ上の移動
 (defun update-world-move-path ()
-  (with-slots (move-paths world-pos move-goal move) *game*
+  (with-slots (move-paths world-pos move-goal) *game*
     (let* ((path (car move-paths))
 	   (goalposx (+ 16 (* (car path) *origin-obj-w*)))
 	   (goalposy (+ 16 (* (cadr path) *origin-obj-h*)))
 	   (diffx (- goalposx (gk:x world-pos)))
 	   (diffy (- goalposy (gk:y world-pos)))
-	   (speed (get-world-move-speed)))
+	   (speed (get-world-move-speed world-pos)))
       (cond
 	((> diffx 0)
 	 (incf (gk:x world-pos) speed))
@@ -1860,14 +1861,75 @@
 	(print 2)
 	))))
 
+;;モンスタ－シンボルの移動
+(defun update-monster-symbol ()
+  (with-slots (monster-symbol frame) *game*
+    (loop :for monster :in monster-symbol
+	  :do (with-slots (pos v change-dir-timing alive-time) monster
+		(let ((spd (get-world-move-speed pos)))
+		  (setf pos (gk:add pos (gk:mult v (gk:vec2 spd spd))))
+		  (decf alive-time)
+		  (when (zerop (mod frame change-dir-timing))
+		    (setf (gk:x v) (- (random 3) 1)
+			  (gk:y v) (- (random 3) 1)))
+		  (when (or (<= alive-time 0)
+			    (>= (gk:x pos) 3200)
+			    (< (gk:x pos) 0)
+			    (>= (gk:y pos) 3200)
+			    (< (gk:y pos) 0)
+			    (= 0 (get-world-cell pos)))
+		    (setf monster-symbol (remove monster monster-symbol :test #'equal))))))))
+
+;;モンスターシンボル生成 5体
+(defun create-monster-symbol ()
+  (with-slots (monster-symbol) *game*
+    (loop :repeat 5
+	  :do
+	     (let* ((start-x 0)
+		    (start-y 0))
+	       (loop :while (= (aref *world-map-data* start-y start-x) 0)
+		     :do (setf start-x (random-minmax 3 96)  start-y (random-minmax 3 96)))
+	       (push  (make-instance 'monster-symbol :x start-x :y start-y :pos (gk:vec2 (* start-x 32) (* start-y 32))
+						     :img-id :monster-img :v (gk:vec2 (1- (random 3)) (1- (random 3)))
+						     :change-dir-timing (random-minmax 70 130)
+						     :alive-time (random-minmax 300 500)
+						     :origin (gk:vec2 0 (* (random +img-monster-max+) 32)))
+		      monster-symbol)))))
+
+;;ワールドマップでのプレイヤーとモンスターシンボルの当たり判定
+(defun collide-player-monster-in-world ()
+  (with-slots (world-pos monster-symbol) *game*
+    (loop :for monster :in monster-symbol
+	  :do (with-slots (pos) monster
+		(let* ((r 16)
+		       (p-px (gk:x world-pos))
+		       (p-py (gk:y world-pos))
+		       (m-px (gk:x pos))
+		       (m-py (gk:y pos)))
+		  (when (>= (+ r r)  (sqrt (+ (expt (abs (- p-px m-px)) 2) (expt (abs (- p-py m-py)) 2))))
+		    (setf monster-symbol (remove monster monster-symbol :test #'equal))
+		    (return t)))))))
+
+;;バトルモードへ行く準備
+(defun go-battle-mode ()
+  (with-slots (state action-state btn-list) *game*
+    (setf state :battle-ready
+          action-state :ready
+	  btn-list nil)
+    (set-battle-field)
+    (set-party-battle-ready-pos)
+    (get-show-cell-coord)))
+
 ;;ワールドマップ更新
 (defun world-map-update ()
-  (with-slots (world-pos move-goal move scroll move-paths state) *game*
+  (with-slots (world-pos move-goal move scroll move-paths state frame) *game*
     (world-map-scroll)
     (let ((temp-pos (math:copy-vec2 world-pos)))
+      (when (zerop (mod frame 100))
+	(create-monster-symbol))
+      (update-monster-symbol)
       (cond
 	(move-paths
-	 ;;(print "moge")
 	 (update-world-move-path))
 	(move-goal
 	 (update-world-unit-pos)
@@ -1876,26 +1938,27 @@
 	     (when (and (>= move (gk:x diff-pos) (- move))
 			(>= move (gk:y diff-pos) (- move)))
 	       (setf move-goal nil))))))
-      (let ((cell (get-world-cell)))
-	(when (= cell 5) ;; +town+
-	  (format t "cell ~a~%" (get-world-cell))
-	  (let* ((diff-posx (- (gk:x world-pos) (gk:x temp-pos)))
-		 (diff-posy (- (gk:y world-pos) (gk:y temp-pos))))
-	    (cond
-	      ((> diff-posx 0)
-	       (decf (gk:x world-pos) 16))
-	      ((< diff-posx 0)
-	       (incf (gk:x world-pos) 16)))
-	    (cond
-	      ((> diff-posy 0)
-	       (decf (gk:y world-pos) 16))
-	      ((< diff-posy 0)
-	       (incf (gk:y world-pos) 16)))
-	    (setf state :town
-		  move-goal nil
-		  move-paths nil)
-	    (format t "cell ~a~%" (get-world-cell))
-	    (create-town-menu-button)))))
+      (let ((cell (get-world-cell world-pos)))
+	(cond
+	  ((= cell 5) ;; +town+
+	   (let* ((diff-posx (- (gk:x world-pos) (gk:x temp-pos)))
+		  (diff-posy (- (gk:y world-pos) (gk:y temp-pos))))
+	     (cond
+	       ((> diff-posx 0)
+		(decf (gk:x world-pos) 16))
+	       ((< diff-posx 0)
+		(incf (gk:x world-pos) 16)))
+	     (cond
+	       ((> diff-posy 0)
+		(decf (gk:y world-pos) 16))
+	       ((< diff-posy 0)
+		(incf (gk:y world-pos) 16)))
+	     (setf state :town
+		   move-goal nil
+		   move-paths nil)
+	     (create-town-menu-button)))
+	  ((collide-player-monster-in-world)
+	   (go-battle-mode)))))
     ))
 ;;----------------------------------------------------------------------------------------------------
 
@@ -1924,8 +1987,6 @@
       (:battle-ready
        (case action-state
 	 (:ready (battle-ready-event))))
-      ;;(:unit-move (update-unit-move))))
-      ;;(update-selected-unit-pos))
       (:equip-menu
        (equip-menu-event))
       (:battle
@@ -1956,7 +2017,9 @@
        (update-damage-font)))
     (init-mouse)
     (init-key)
-    (incf frame)))
+    (incf frame)
+    (when (>= frame 100000)
+      (setf frame 0))))
 
 
 (defmethod gk:draw ((app lowmogecage))

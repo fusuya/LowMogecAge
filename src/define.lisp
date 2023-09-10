@@ -325,6 +325,7 @@
    (move-goal           :accessor game/move-goal       :initform nil    :initarg :move-goal)
    (world-pos           :accessor game/world-pos       :initform nil    :initarg :world-pos)
    (party           :accessor game/party       :initform nil    :initarg :party)
+   (monster-symbol           :accessor game/monster-symbol       :initform nil    :initarg :monster-symbol)
    (cursor          :accessor game/cursor      :initform 0      :initarg :cursor)
    (item            :accessor game/item        :initform nil    :initarg :item)
    (bgm             :accessor game/bgm         :initform :on    :initarg :bgm)
@@ -363,6 +364,11 @@
 
 (defclass unit-btn (obj)
   ())
+
+(defclass monster-symbol (obj)
+  ((v      :accessor v      :initform 0     :initarg :v)
+   (alive-time      :accessor alive-time      :initform 0     :initarg :alive-time)
+   (change-dir-timing      :accessor change-dir-timing      :initform 0     :initarg :change-dir-timing)))
 
 (defclass cell (obj)
   ((name  :accessor name  :initform nil :initarg :name)

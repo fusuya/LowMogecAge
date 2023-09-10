@@ -4,7 +4,7 @@
 ;;モンスター番号
 (my-enum  +img-slime+ +img-orc+ +img-yote1+ +img-hydra+ +img-dragon+ +img-brigand+ +img-arrow-hood+ +img-dagger-hood+
 	  +img-sabel-hood+ +img-shield-hood+ +img-skeleton+ +img-revenant+ +img-zombie+ +img-dry-corpse+ +img-ghost+ +img-phantom+
-	  +img-gust+ +img-gust-knight+ +img-gargoyle+)
+	  +img-gust+ +img-gust-knight+ +img-gargoyle+ +img-monster-max+)
 
 
 (defclass arrow-hood (monster)

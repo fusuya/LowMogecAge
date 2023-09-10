@@ -647,10 +647,14 @@
 
 ;;ワールドマップ上のキャラ
 (defun draw-world-unit ()
-  (with-slots (party world-pos scroll) *game*
+  (with-slots (party world-pos scroll monster-symbol) *game*
     (let ((unit (car party)))
       (with-slots (img-id origin-w origin-h origin) unit
-	(gk:draw-image (gk:subt world-pos (gk:vec2 16 16) scroll) img-id  :origin origin :width origin-w :height origin-h)))))
+	(gk:draw-image (gk:subt world-pos (gk:vec2 16 16) scroll) img-id  :origin origin :width origin-w :height origin-h))
+      ;;モンスターシンボル
+      (loop :for monster :in monster-symbol
+	    :do (with-slots (pos img-id origin origin-h origin-w) monster
+		  (gk:draw-image (gk:subt pos scroll) img-id :origin origin :width origin-w :height origin-h))))))
 
 (defun draw-world ()
   (draw-world-map)

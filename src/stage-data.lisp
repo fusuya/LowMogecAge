@@ -4,12 +4,16 @@
 
 ;;TODO
 (defparameter *cell-rate*
-  `(:forest-field (:rate ((,+forest+ . 10) (,+mtlow+ . 0) (,+mthigh+ . 0) (,+water+ . 0) (,+fort+ . 0) (,+plain+ . 90))
-		   :forest-add-rate 30 :mtlow-add-rate 0 :mthigh-add-rate 0 :water-add-rate 0)
-    :mounten-field (:rate ((,+forest+ . 0) (,+mtlow+ . 3) (,+mthigh+ . 1) (,+water+ . 0) (,+fort+ . 0) (,+plain+ . 96))
-		    :forest-add-rate 0 :mtlow-add-rate 30 :mthigh-add-rate 30 :water-add-rate 0)
+  `(:forest-field (:rate ((,+forest+ . 20) (,+mtlow+ . 1) (,+mthigh+ . 0) (,+water+ . 1) (,+fort+ . 0) (,+plain+ . 90))
+		   :forest-add-rate 35 :mtlow-add-rate 0 :mthigh-add-rate 0 :water-add-rate 0)
+    :mounten-field (:rate ((,+forest+ . 0) (,+mtlow+ . 4) (,+mthigh+ . 1) (,+water+ . 0) (,+fort+ . 0) (,+plain+ . 90))
+		    :forest-add-rate 0 :mtlow-add-rate 40 :mthigh-add-rate 30 :water-add-rate 0)
     :mt-forest-field (:rate ((,+forest+ . 5) (,+mtlow+ . 3) (,+mthigh+ . 1) (,+water+ . 0) (,+fort+ . 0) (,+plain+ . 91))
-		      :forest-add-rate 30 :mtlow-add-rate 30 :mthigh-add-rate 30 :water-add-rate 0)))
+		      :forest-add-rate 30 :mtlow-add-rate 30 :mthigh-add-rate 20 :water-add-rate 0)
+    :plain-field (:rate ((,+forest+ . 1) (,+mtlow+ . 1) (,+mthigh+ . 0) (,+water+ . 2) (,+fort+ . 0) (,+plain+ . 100))
+		  :forest-add-rate 10 :mtlow-add-rate 5 :mthigh-add-rate 0 :water-add-rate 5)
+    :river-field (:rate ((,+forest+ . 5) (,+mtlow+ . 3) (,+mthigh+ . 0) (,+water+ . 15) (,+fort+ . 0) (,+plain+ . 90))
+		   :forest-add-rate 10 :mtlow-add-rate 10 :mthigh-add-rate 0 :water-add-rate 40)))
 
 (defparameter *appear-enemy-rate-list*
   '((:slime . 100) (:orc . 90) (:brigand . 80) (:hydra . 70) (:goron . 60)
@@ -248,7 +252,8 @@
   (let ((new-field-rate (copy-tree (getf field-type :rate)))
 	(forest-add-rate (getf field-type :forest-add-rate ))
 	(mtlow-add-rate (getf field-type :mtlow-add-rate ))
-	(mthigh-add-rate (getf field-type :mthigh-add-rate )))
+	(mthigh-add-rate (getf field-type :mthigh-add-rate ))
+	(water-add-rate (getf field-type :water-add-rate)))
     (multiple-value-bind (left-cell down-cell) (check-arround-cell y x)
       (cond
 	((= left-cell +forest+)
@@ -257,6 +262,8 @@
 	 (incf (cdr (find left-cell new-field-rate :key #'car)) mtlow-add-rate))
 	((= left-cell +mthigh+)
 	 (incf (cdr (find left-cell new-field-rate :key #'car)) mthigh-add-rate))
+	((= left-cell +water+)
+	 (incf (cdr (find left-cell new-field-rate :key #'car)) water-add-rate))
 	)
       (cond
 	((= down-cell +forest+)
@@ -264,7 +271,9 @@
 	((= down-cell +mtlow+)
 	 (incf (cdr (find down-cell new-field-rate :key #'car)) mtlow-add-rate))
 	((= down-cell +mthigh+)
-	 (incf (cdr (find down-cell new-field-rate :key #'car)) mthigh-add-rate)))
+	 (incf (cdr (find down-cell new-field-rate :key #'car)) mthigh-add-rate))
+	((= down-cell +water+)
+	 (incf (cdr (find left-cell new-field-rate :key #'car)) water-add-rate)))
       new-field-rate)))
 	
 
@@ -277,18 +286,36 @@
     ((= cell +fort+) (values "砦" 20 10 10))
     ((= cell +water+) (values "川" 0 10 0))
     ((= cell +forest+) (values "森" 0 5 5))))
-      
+
+;;ワールド上の地形ゲット ;;TODO pos
+(defun get-world-cell (pos)
+  (let* ((arr-x (floor (gk:x pos) 32))
+	 (arr-y (floor (gk:y pos) 32)))
+    (aref *world-map-data* arr-y arr-x)))
+
+;;ワールドマップでモンスターシンボルとぶつかった場所のマップタイプ
+(defun get-field-type ()
+  (with-slots (world-pos) *game*
+    (let ((world-cell (get-world-cell world-pos)))
+      (cond
+	((= world-cell 1) :plain-field)
+	((= world-cell 2) (if (= (random 2) 0) :forest-field :mt-forest-field))
+	((= world-cell 3) :river-field)
+	((= world-cell 4) (if (= (random 2) 0) :mounten-field :mt-forest-field))))))
 
 ;;地形セット TODO
 (Defun set-field-cell ()
-  (with-slots (field tate yoko field-type player-init-pos enemy-init-pos field-array) *battle-field*
+  (with-slots (field tate yoko player-init-pos enemy-init-pos field-array) *battle-field*
     (multiple-value-bind (player-dir enemy-dir) (get-battle-init-pos-dir)
-	(let ((player-init-xy-list (get-battle-init-pos player-dir 4 4))
-	      (enemy-init-xy-list (get-battle-init-pos enemy-dir (floor yoko 2) (floor tate 2))))
+	(let* ((player-init-xy-list (get-battle-init-pos player-dir 4 4))
+	      (enemy-init-xy-list (get-battle-init-pos enemy-dir (floor yoko 2) (floor tate 2)))
+	      (field-type (get-field-type))
+	       (field-type-data (getf *cell-rate* field-type)))
+	  (print field-type)
 	  (loop :for y :from 0 :below tate
 		:do (loop :for x :from 0 :below yoko
 			  :do
-			     (let* ((new-field-type (get-new-field-type y x field-type))
+			     (let* ((new-field-type (get-new-field-type y x field-type-data))
 				    (cell (weightpick new-field-type))
 				    (cell-w (* *origin-obj-w* 1))
 				    (cell-h (* *origin-obj-h* 1))
@@ -327,8 +354,8 @@
 	    yoko 27 ;;(random-minmax 15 20)
 	    battle-field-border-x (+ (* yoko cell-w)  2)
 	    battle-field-border-y (+ (* tate cell-h)  2)
-	    field-array (make-array (list tate yoko))
-	    field-type (getf *cell-rate* :mt-forest-field)) ;; TODO
+	    field-array (make-array (list tate yoko)))
+	    ;;field-type (getf *cell-rate* :mt-forest-field)) ;; TODO
       (set-field-cell)
       ;;(set-battle-init-pos)
       (set-enemies))))
