@@ -242,6 +242,7 @@
    (x2 :initarg :x2 :initform nil :accessor button/x2)
    (y1 :initarg :y1 :initform nil :accessor button/y1)
    (y2 :initarg :y2 :initform nil :accessor button/y2)
+   (box? :initarg :box? :initform nil :accessor button/box?)
    ))
 
 
@@ -261,6 +262,8 @@
 (defclass next-item-page (button)
   ())
 (defclass prev-item-page (button)
+  ())
+(defclass end-equip-menu-btn (button)
   ())
 
 (Defclass shop-btn (button)
@@ -289,6 +292,9 @@
   ())
 
 (defclass skill-cmd-btn (command-btn)
+  ())
+
+(defclass change-equip-btn (command-btn)
   ())
 
 (defclass wait-cmd-btn (command-btn)

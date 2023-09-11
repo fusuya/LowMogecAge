@@ -366,41 +366,17 @@
 ;;-------------------------------------------------------------------------------
 ;; ;;武器変更画面
 (defun draw-equip-menu-description ()
-  ;;(render-background )
-  ;;(render-bgmonoff-button)
-  ;;(render-weapon-list)
-  (with-slots (item-page item) *game*
-    ;; (text-out *hmemdc* (format nil "~aの現在の武器" (name selected)) 270 5)
-    ;; (when (buki selected)
-    ;;   (let ((atk (cond
-    ;; 		   ((eq (categoly (buki selected)) :wand) "魔攻")
-    ;; 		   ((eq (categoly (buki selected)) :staff) "回復力")
-    ;; 		   (t "攻撃力"))))
-    ;;   (text-out *hmemdc* (format nil "名前 : ~a" (name (buki selected))) 270 40)
-    ;;   (text-out *hmemdc* (format nil "~a : ~a" atk (damage (buki selected))) 270 70)
-    ;;   (text-out *hmemdc* (format nil "命中 : ~a" (hit (buki selected))) 270 100)
-    ;;   (text-out *hmemdc* (format nil "射程 : ~a～~a" (rangemin (buki selected))
-    ;; 				 (rangemax (buki selected))) 270 130)
-    ;;   (text-out *hmemdc* (format nil "会心 : ~a%" (critical (buki selected))) 270 160)))
-
-    ;; (text-out *hmemdc* (format nil "~aの現在の防具" (name selected)) 570 5)
-    ;; (when (armor selected)
-    ;;   (text-out *hmemdc* (format nil "名前 : ~a" (name (armor selected))) 570 40)
-    ;;   (text-out *hmemdc* (format nil "防御力 : ~a" (def (armor selected))) 570 70)
-    ;;   (text-out *hmemdc* (format nil "ブロック率 : ~a%" (blk (armor selected))) 570 100))
-    ;; (render-selecting-item selected)
-    ;; (select-object *hogememdc* *waku-img*)
-    ;; (new-trans-blt 260 35 0 0 128 128 250 160)
-    ;; (new-trans-blt 560 35 0 0 128 128 250 150)
-    ;; (new-trans-blt 260 280 0 0 128 128 250 220)
-    ;; (select-object *hmemdc* *font20*)
+  (with-slots (item-page item selected-unit) *game*
     (let ((item-page-max (1+ (floor  (length item) *item-show-max*))))
       (gk:draw-text "持ち物" (gk:vec2 99 790) :fill-color (gk:vec4 1 1 1 1)  :font *font32*)
       (gk:draw-text (format nil "~d / ~d" (1+ item-page) item-page-max) (gk:vec2 230 790)
 		    :fill-color (gk:vec4 1 1 1 1) :font *font32*)
       (gk:draw-rect (gk:vec2 20 130) 300 650 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
-      (gk:draw-text "※捨てる:アイテムにカーソルを合わせて右クリック" (gk:vec2 20 50) :fill-color (gk:vec4 1 1 1 1)  :font *font32*)
-      (gk:draw-text "※装備中のアイテムは捨てることができません" (gk:vec2  20 20) :fill-color (gk:vec4 1 1 1 1) :font *font32*))))
+      (gk:draw-text "※外す:装備アイテムにカーソルを合わせて右クリック(武器は外せない)" (gk:vec2 320 50) :fill-color (gk:vec4 1 0 1 1)  :font *font32*)
+      (gk:draw-text (format nil "選択中のユニット:~a" (name selected-unit)) (gk:vec2 340 793)
+		    :fill-color (gk:vec4 1 1 0 1) :font *font32*)
+      ;;(gk:draw-text "※装備中のアイテムは捨てることができません" (gk:vec2  320 20) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      )))
 
 ;;現在装備中のアイテム情報
 (Defun draw-equiped-item-info ()
@@ -613,10 +589,13 @@
 (defun draw-item-btn-list ()
   (with-slots (btn-list) *game*
     (loop :for btn :in btn-list
-	  :do (draw-text-button-no-waku btn)
-	      (when (and  (collide-p *mouse* btn)
-			  (eq 'equip-item-btn (type-of btn)))
-		(draw-item-info-with-cursor (item btn))))))
+	  :do (with-slots (box?) btn
+		(if box?
+		    (draw-text-btn-with-waku btn 2)
+		    (draw-text-button-no-waku btn))
+		(when (and  (collide-p *mouse* btn)
+			    (eq 'equip-item-btn (type-of btn)))
+		  (draw-item-info-with-cursor (item btn)))))))
 
 (defun draw-equip-menu ()
   ;;(gk:scale-canvas *scale-obj-w* *scale-obj-h*)

@@ -48,8 +48,10 @@
 	(rate-decf (game/enemy-rate *game*))))
 
 ;;出現する敵 階層によって出現率を変える
-(defun appear-enemy ()
-  (weightpick (game/enemy-rate *game*)))
+(defun appear-enemy (level)
+  (let ((monster-list (loop :for lv :from 1 :to level
+			    :append (getf *monster-list-by-level lv))))
+    (nth (random (length monster-list)) monster-list)))
 
 ;;階層+-２
 (defun set-enemy-level ()
@@ -100,50 +102,13 @@
       (incf (agi atker)))))
 
 
-(defun create-enemy-data (e-class cell hp str def int res agi expe job)
-  (let* ((level (set-enemy-level))
-	 (enemy-w *origin-obj-w*)
-	 (enemy-h *origin-obj-h*)
-	 (e (make-instance e-class :x (x cell) :y (y cell)
-				   ;; :posx (posx cell) :posy (posy cell)
-				   ;;:posx2 (posx2 cell)   :posy2 (posy2 cell)
-				   :pos (math:copy-vec2  (pos cell))
-				   :name (nth (random (length *name-list*)) *name-list*)
-				   :level level
-				   :weapon (enemy-equip-weapon e-class)
-			 ;; :atk-spd 10 :buki (enemy-equip-weapon e-type job)
-			 ;; :armor (enemy-equip-armor)
-			  ;;:moto-w *obj-w* :moto-h *obj-h*
-			  ;;:str str :vit def :hp hp :maxhp hp :int int :res res
-			  ;;:expe (+ expe level) :agi agi :state :wait
-				   :w enemy-w :h enemy-h :sight (+ 3 (random 3))
-			  ;;:w/2 (floor *obj-w* 2) :h/2 (floor *obj-h* 2)
-			  ;;:obj-type e-type :img-h job
-			  :team :enemy :job job
-				  ;; :img 1
-				   )))
-    ;;(dotimes (i (level e))
-    ;;  (status-up e))
-    e))
 
-;;プレイヤーのいる階層で敵の強さが変わる hp str def int res agi expe job
-(defun create-enemy (e-pos e-type)
-  (case e-type
-    (:slime    (create-enemy-data 'slime e-pos 6  1  1 1  1  1   3  +job_slime+))
-    (:orc      (create-enemy-data 'orc e-pos 10 4  1 1  1  2   5  +job_orc+))
-    (:brigand  (create-enemy-data 'brigand e-pos 6  2  2 7  4  3   7  +job_brigand+ ))
-    (:hydra    (create-enemy-data 'hydra e-pos 12 2  5 2  3  3  10  +job_hydra+ ))
-    (:dragon   (create-enemy-data 'dragon e-pos 20 5  6 5  6  5  20  +job_dragon+ ))
-    (:yote1    (create-enemy-data e-type e-pos 3  3 50 3 50 33 300  +job_yote1+ ))
-    (:goron    (create-enemy-data e-type e-pos 5  2  3 3  3  3   4  +job_goron+ ))
-    (:warrior  (create-enemy-data 'warrior e-pos 10 4  5 1  2  2   8  +job_warrior+))
-    (:sorcerer (create-enemy-data e-type e-pos 5  1  2 7  5  1   8  +job_sorcerer+))
-    (:priest   (create-enemy-data e-type e-pos 5  1  4 4  8  3   8  +job_priest+))
-    (:thief    (create-enemy-data e-type e-pos 6  3  3 3  3  9   8  +job_thief+ ))
-    (:archer   (create-enemy-data e-type e-pos 5  3  3 3  3  3   8  +job_archer+ ))
-    (:knight   (create-enemy-data e-type e-pos 12 6  4 3  5  3   8  +job_s_knight+ ))
-    (:pknight  (create-enemy-data e-type e-pos 10 7  2 3  2  2   8  +job_p_knight+ ))
-    ))
+;;モンスターデータ作成
+(defun create-enemy (cell e-type)
+  (make-instance e-type :pos (math:copy-vec2 (pos cell)) :name (nth (random (length *name-list*)) *name-list*)
+			:x (x cell) :y (y cell)
+			:w *origin-obj-w* :h *origin-obj-h*
+			:team :enemy :sight (+ 3 (random 3))))
 
 (defun get-battle-init-pos-dir ()
   (case (random 4)
@@ -196,19 +161,27 @@
       (setf enemy-init-pos (remove cell enemy-init-pos :test #'equal))
       cell)))
 
+;;プレイヤーパーティの平均レベル
+(defun get-player-average-level ()
+  (with-slots (party) *game*
+    (floor (loop :for p :in party
+		 :sum (level p))
+	   (length party))))
+
 ;;敵を配置する
 (defun set-enemies ()
   (with-slots (enemy-init-pos enemies field stage) *battle-field*
-    (let ((enemy-num (+ 3 (random (+ 3 (floor stage 5)))))) ;;1フロアに出る敵の数
-      (loop
-	 :repeat enemy-num
-	 :do
-	   (let* ((e-type (appear-enemy))
-		  (cell (get-enemy-init-pos))
-		  (e (create-enemy cell e-type)))
-	     (push e enemies)))
-      (setf enemy-init-pos nil) ;;終わったらnilにしとく
-      )))
+    (let ((enemy-num (random-minmax 3 6))
+	  (player-average-level (get-player-average-level)))
+	  (loop
+	    :repeat enemy-num
+	    :do
+	       (let* ((e-type (appear-enemy player-average-level))
+		      (cell (get-enemy-init-pos))
+		      (e (create-enemy cell e-type)))
+		 (push e enemies)))
+	  (setf enemy-init-pos nil) ;;終わったらnilにしとく
+	  )))
 
 ;;階段セット
 (defun set-kaidan (donjon)
@@ -275,9 +248,9 @@
 	((= down-cell +water+)
 	 (incf (cdr (find left-cell new-field-rate :key #'car)) water-add-rate)))
       new-field-rate)))
-	
 
-;;地形のデータ return '(name heal def avoid) 
+
+;;地形のデータ return '(name heal def avoid)
 (defun get-cell-data (cell)
   (cond
     ((= cell +plain+) (values "平原" 0 0 0))

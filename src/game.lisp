@@ -241,8 +241,53 @@
 	   (mouse-xy (list mouse-x mouse-y)))
       (find mouse-xy area :test #'equal))))
 ;;--------------------------------------------------------------------------------
+;;装備アイテムボタンつくる
+(defun create-item-btn ()
+  (with-slots (item btn-list item-page) *game*
+    (setf btn-list nil)
+    (loop :for i :from (* item-page *item-show-max*) :below (length item)
+	  :repeat *item-show-max*
+	  :for posx = 60
+	  :for posy :from 750 :downto 0 :by 32
+	  :do (let* ((itemun (nth i item))
+		     (btn (make-instance 'equip-item-btn
+					 :pos (gk:vec2 posx posy)
+					 :w 250 :h 30
+					 :new (new itemun)
+					 :equiped-unit (equiped itemun)
+					 :item itemun
+					 :font *font32*
+					 :color (gk:vec4 1 1 1 1)
+					 :string (name itemun))))
+		(push btn btn-list)))))
+
+;;装備メニュー画面の次と前ボタンと終了ボタン
+(Defun create-next-prev-btn ()
+  (with-slots (btn-list) *game*
+    (let ((next-btn (make-instance 'next-item-page
+				   :pos (gk:vec2 265 85) :box? t
+				   :w 60 :h 40 :font *font48*
+				   :color (gk:vec4 1 1 1 1)
+				   :string "次→"))
+	  (prev-btn (make-instance 'prev-item-page
+				   :pos (gk:vec2 25 85) :box? t
+				   :w 60 :h 40 :font *font48*
+				   :color (gk:vec4 1 1 1 1)
+				   :string "←前"))
+	  (end-btn (make-instance 'end-equip-menu-btn
+				  :pos (gk:vec2 130 40) :box? t
+				  :w 70 :h 40 :font *font48*
+				  :color (gk:vec4 1 1 0 1)
+				  :string "終了")))
+      (push next-btn btn-list)
+      (push prev-btn btn-list)
+      (push end-btn btn-list))))
 
 
+;;装備メニュー開く
+(defun open-equip-menu ()
+  (create-item-btn)
+  (create-next-prev-btn))
 
 ;;------------------------------------------------------------------------------------
 (defmethod equip-item ((item weapondesc) unit)
@@ -298,41 +343,7 @@
 					     :string str)))
 		(push btn btn-list)))))
 
-;;装備アイテムボタンつくる
-(defun create-item-btn ()
-  (with-slots (item btn-list item-page) *game*
-    (setf btn-list nil)
-    (loop :for i :from (* item-page *item-show-max*) :below (length item)
-	  :repeat *item-show-max*
-	  :for posx = 60
-	  :for posy :from 750 :downto 0 :by 32
-	  :do (let* ((itemun (nth i item))
-		     (btn (make-instance 'equip-item-btn
-					 :pos (gk:vec2 posx posy)
-					 :w 250 :h 30
-					 :new (new itemun)
-					 :equiped-unit (equiped itemun)
-					 :item itemun
-					 :font *font32*
-					 :color (gk:vec4 1 1 1 1)
-					 :string (name itemun))))
-		(push btn btn-list)))))
 
-;;装備メニュー画面の次と前ボタン
-(Defun create-next-prev-btn ()
-  (with-slots (btn-list) *game*
-    (let ((next-btn (make-instance 'next-item-page
-				   :pos (gk:vec2 265 90)
-				   :w 60 :h 40 :font *font48*
-				   :color (gk:vec4 1 1 1 1)
-				   :string "次→"))
-	  (prev-btn (make-instance 'prev-item-page
-				   :pos (gk:vec2 25 90)
-				   :w 60 :h 40 :font *font48*
-				   :color (gk:vec4 1 1 1 1)
-				   :string "←前")))
-      (push next-btn btn-list)
-      (push prev-btn btn-list))))
 
 ;;装備メニュー画面でユニット選択に使う
 (defun create-unit-btn ()
@@ -387,6 +398,13 @@
 	 (decf item-page)))
       (create-item-btn)
       (create-next-prev-btn))))
+
+;;装備メニュー終了ボタン
+(defmethod btn-click-event ((btn end-equip-menu-btn))
+  (with-slots (state btn-list selected-unit) *game*
+    (setf state :battle
+	  btn-list nil)
+    (create-action-command-btn selected-unit)))
 
 ;;アイテムボタン
 (defmethod btn-click-event ((btn equip-item-btn))
@@ -513,6 +531,9 @@
 	(push (make-instance 'skill-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
 					    :string "スキル" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
+      (push (make-instance 'change-equip-btn :pos (gk:vec2 btn-x (decf btn-y h))
+					 :string "装備変更" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
+	    btn-list)
       (push (make-instance 'wait-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
 					 :string "待機" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list))))
@@ -523,6 +544,9 @@
     (with-slots (state skill) unit
       (push (make-instance 'wait-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
 					 :string "待機" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
+	    btn-list)
+      (push (make-instance 'change-equip-btn :pos (gk:vec2 btn-x (incf btn-y h))
+					 :string "装備変更" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list)
       (when skill
 	(push (make-instance 'skill-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
@@ -587,6 +611,13 @@
     (setf action-state :select-skill-mode
 	  btn-list nil)
     (create-skill-btn unit)))
+
+;;装備変更ボタン
+(defmethod click-command-btn ((btn change-equip-btn) unit)
+  (with-slots (state btn-list) *game*
+    (setf state :equip-menu
+	  btn-list nil)
+    (open-equip-menu)))
 
 ;;待機
 (defmethod click-command-btn ((btn wait-cmd-btn) unit)
@@ -1368,7 +1399,7 @@
  ;;移動後に攻撃できる敵がいる場合のクリックイベント
 (defun attack-mode-left-click-event ()
   (with-slots (selected-unit action-state temp-dmg) *game*
-    (with-slots (pos atking-enemy weapon origin job) selected-unit
+    (with-slots (pos atking-enemy weapon origin) selected-unit
       (with-slots (enemies) *battle-field*
 	(loop :for e :in enemies
 	      :do (with-slots (atked-pos) e
@@ -1513,13 +1544,7 @@
 	      (setf action-state :enemy-turn)))))))
 
 ;;------------------------------------------------------------------------------------
-;;装備メニュー開く
-(defun open-equip-menu ()
-  (create-item-btn)
-  (create-next-prev-btn)
-  ;;(create-unit-btn)
-  (setf (game/state *game*) :equip-menu))
-
+;;装備メニュー画面
 
 ;;装備を外す
 (defun remove-equip (btn)

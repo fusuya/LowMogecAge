@@ -6,6 +6,16 @@
 	  +img-sabel-hood+ +img-shield-hood+ +img-skeleton+ +img-revenant+ +img-zombie+ +img-dry-corpse+ +img-ghost+ +img-phantom+
 	  +img-gust+ +img-gust-knight+ +img-gargoyle+ +img-monster-max+)
 
+;;レベル別モンスターリスト
+(defparameter *monster-list-by-level
+  '(1 (arrow-hood dagger-hood  skeleton revenant gust slime)
+    2 (sabel-hood zombie ghost brigand)
+    3 (shield-hood dry-corpse gargoyle orc)
+    4 (gust-knight)
+    5 (phantom )
+    10 (hydra)
+    11 (dragon)
+    ))
 
 (defclass arrow-hood (monster)
   ())
@@ -182,8 +192,8 @@
 (defmethod initialize-instance :after ((e orc) &rest initargs)
   (declare (ignore initargs))
   (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
-	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
-    (setf job-name "オーク"
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type level) e
+    (setf job-name "オーク" level 3
 	  move 4 hit-value 4 atk-point 3 avoid-value 4 def 2
 	  res-bonus 5 vit-bonus 4 hp 28 maxhp 28 mp 15 maxmp 15
 	  rangemin 1 rangemax 1 atking-type :short
@@ -200,8 +210,8 @@
 (defmethod initialize-instance :after ((e hydra) &rest initargs)
   (declare (ignore initargs))
   (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
-	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
-    (setf job-name "ヒドラ"
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type level ) e
+    (setf job-name "ヒドラ" level 10
 	  move 3 hit-value 14 atk-point 15 avoid-value 13 def 13
 	  res-bonus 13 vit-bonus 14 hp 106 maxhp 106 mp 44 maxmp 44
 	  rangemin 1 rangemax 1 atking-type :short
@@ -214,8 +224,8 @@
 (defmethod initialize-instance :after ((e brigand) &rest initargs)
   (declare (ignore initargs))
   (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
-	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
-    (setf job-name "ブリガンド"
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type level) e
+    (setf job-name "ブリガンド" level 2
 	  hit-value 4 atk-point 2 avoid-value 3 def 3
 	  res-bonus 3 vit-bonus 4 hp 20 maxhp 20 mp 10 maxmp 10
 	  move 3 rangemin 2 rangemax 5 atking-type :long
@@ -228,8 +238,8 @@
 (defmethod initialize-instance :after ((e slime) &rest initargs)
   (declare (ignore initargs))
   (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
-	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
-    (setf job-name "スライム"
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type level) e
+    (setf job-name "スライム" level 1
 	  move 3 hit-value 3 atk-point 1 avoid-value 4 def 3
 	  res-bonus 3 vit-bonus 3 hp 13 maxhp 13 mp 0 maxmp 0
 	  rangemin 1 rangemax 1 atking-type :short
@@ -243,10 +253,10 @@
 (defmethod initialize-instance :after ((e dragon) &rest initargs)
   (declare (ignore initargs))
   (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
-	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type) e
-    (setf job-name "ドラゴン"
+	       vit-bonus res-bonus hp maxhp mp maxmp rangemin rangemax atking-type level ) e
+    (setf job-name "ドラゴン" level 11
 	  move 4 hit-value 17 atk-point 18 avoid-value 15 def 14
-	  res-bonus 17 vit-bonus 17 hp 133 maxhp 13 mp 84 maxmp 84
+	  res-bonus 17 vit-bonus 17 hp 133 maxhp 133 mp 84 maxmp 84
 	  rangemin 1 rangemax 1 atking-type :short
 	  movecost  #(1 -1 -1 2 2 2 2 1 1)
 	  origin (gk:vec2 0 (* 32 +img-dragon+))
