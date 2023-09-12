@@ -171,8 +171,8 @@
 ;;敵を配置する
 (defun set-enemies ()
   (with-slots (enemy-init-pos enemies field stage) *battle-field*
-    (let ((enemy-num (random-minmax 3 6))
-	  (player-average-level (get-player-average-level)))
+    (let* ((player-average-level (get-player-average-level))
+	   (enemy-num (random-minmax 3 (+ 3 (random player-average-level)))))
 	  (loop
 	    :repeat enemy-num
 	    :do

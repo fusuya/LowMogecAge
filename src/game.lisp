@@ -1,7 +1,6 @@
 (in-package :lowmogecage)
-;;TODO アイテム装備 (ワールドマップ スクロール)　クエスト　買い物　町
-;; スキル増やす ワールドマップからの戦闘 出現敵どうする
-
+;;TODO クエスト　買い物　町
+;; スキル増やす スキルのターゲット
 (gk:defgame lowmogecage () ()
   (:viewport-width *window-w*)
   (:viewport-height *window-h*))
@@ -129,7 +128,7 @@
 
 
 ;;キャラクターを追加 debug
-(defun push-chara-init-party (num unit &optional skill1)
+(defun push-chara-init-party (num unit &optional skill1 use-item)
   (with-slots (party item) *game*
     (when (> 5 (length party))
       (let* ((weapon (job-init-weapon unit))
@@ -147,15 +146,17 @@
 	      party (append party (list chara)))
 	(when skill1
 	  (setf (skill chara) skill1))
+	(when use-item
+	  (setf (use-item chara) use-item))
 	(push weapon item)
 	(push armor item)))))
 ;; debug
 (defun test-create-party-chara ()
-  (push-chara-init-party +job_warrior+ 'p-warrior)
-  (push-chara-init-party +job_sorcerer+ 'p-sorcerer (list :fire))
-  (push-chara-init-party +job_priest+ 'p-priest (list :heal))
-  (push-chara-init-party +job_s_knight+ 'p-s-knight)
-  (push-chara-init-party +job_archer+ 'p-archer))
+  (push-chara-init-party +job_warrior+ 'p-warrior (list :first-aid) (list :healing-potion))
+  (push-chara-init-party +job_sorcerer+ 'p-sorcerer (list :first-aid :fire))
+  (push-chara-init-party +job_priest+ 'p-priest (list :first-aid :heal))
+  (push-chara-init-party +job_s_knight+ 'p-s-knight (list :first-aid))
+  (push-chara-init-party +job_archer+ 'p-archer (list :first-aid)))
 
 
 ;;開始前の初期化
@@ -482,8 +483,8 @@
 	      :return t))))
 ;;----------------------------------------------------------------------------------
 ;; skill btn
-(defun create-skill-btn (unit)
-  (with-slots (skill pos) unit
+(defun create-skill-or-item-btn (unit skill-or-item)
+  (with-slots (pos) unit
     (let* ((w 60) (h 17)
 	   (btn-x (if (>= (gk:x pos) *origin-window-w/2*)
 		      (- (gk:x pos) w)
@@ -497,13 +498,14 @@
 			 (- posy h))
 			(t (+ posy (* h 2) h))))
 	   (skill-list (if (> btn-y 32)
-			   skill (reverse skill)))
+			   skill-or-item (reverse skill-or-item)))
 	   (func (if (> btn-y 32)
 		     #'- #'+)))
       (loop :for sk :in skill-list
-	    :do (let ((name (name (getf *skill-list* sk))))
+	    :do (let ((name (name (getf *skill-and-item-list* sk))))
 		  (push (make-instance 'skill-btn :pos (gk:vec2 btn-x (setf btn-y (funcall func btn-y h)))
 						  :tag sk :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*
+						  :description (getf *btn-description* sk)
 						  :string name)
 			(game/btn-list *game*))))
       ;;(print (button/pos (car (game/btn-list *game*))))
@@ -515,52 +517,73 @@
 ;;画面上側or普通
 (defun create-action-command-btn-normal (btn-x btn-y w h unit)
   (with-slots (btn-list) *game*
-    (with-slots (state skill) unit
+    (with-slots (state skill use-item) unit
       (when (eq state :inaction)
 	(push (make-instance 'normal-move-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
+						  :description (getf *btn-description* :normal-move)
 						  :string "通常移動" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list)
 	(push (make-instance 'fast-move-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
+						:description (getf *btn-description* :fast-move)
 						:string "全力移動" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
       (when (attack-p unit)
 	(push (make-instance 'attack-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
+					     :description (getf *btn-description* :normal-attack)
 					     :string "通常攻撃" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
       (when skill
 	(push (make-instance 'skill-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
+					    :description (getf *btn-description* :skill)
 					    :string "スキル" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
+      (when use-item
+	(push (make-instance 'use-item-btn :pos (gk:vec2 btn-x (decf btn-y h))
+					    :description (getf *btn-description* :use-item)
+					    :string "アイテム" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
+	      btn-list))
       (push (make-instance 'change-equip-btn :pos (gk:vec2 btn-x (decf btn-y h))
+					     :description (getf *btn-description* :change-equip)
 					 :string "装備変更" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list)
       (push (make-instance 'wait-cmd-btn :pos (gk:vec2 btn-x (decf btn-y h))
+					 :description (getf *btn-description* :wait)
 					 :string "待機" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list))))
 
 ;;画面下側にいた場合
 (defun create-action-command-btn-bottom-side (btn-x btn-y w h unit)
   (with-slots (btn-list) *game*
-    (with-slots (state skill) unit
-      (push (make-instance 'wait-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
+    (with-slots (state skill use-item) unit
+      (push (make-instance 'wait-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h)) :description (getf *btn-description* :wait)
 					 :string "待機" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list)
       (push (make-instance 'change-equip-btn :pos (gk:vec2 btn-x (incf btn-y h))
-					 :string "装備変更" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
+					     :description (getf *btn-description* :change-equip)
+					     :string "装備変更" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list)
+      (when use-item
+	(push (make-instance 'use-item-btn :pos (gk:vec2 btn-x (incf btn-y h))
+					    :description (getf *btn-description* :use-item)
+					    :string "アイテム" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
+	      btn-list))
       (when skill
 	(push (make-instance 'skill-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
+					    :description (getf *btn-description* :skill)
 					    :string "スキル" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
       (when (attack-p unit)
 	(push (make-instance 'attack-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
+					     :description (getf *btn-description* :normal-attack)
 					     :string "通常攻撃" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
       (when (eq state :inaction)
 	(push (make-instance 'fast-move-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
+						:description (getf *btn-description* :fast-move)
 						:string "全力移動" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	      btn-list))
       (push (make-instance 'normal-move-cmd-btn :pos (gk:vec2 btn-x (incf btn-y h))
+						:description (getf *btn-description* :normal-move)
 						:string "通常移動" :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*)
 	    btn-list))))
 
@@ -610,7 +633,14 @@
   (with-slots (action-state btn-list) *game*
     (setf action-state :select-skill-mode
 	  btn-list nil)
-    (create-skill-btn unit)))
+    (create-skill-or-item-btn unit (skill unit))))
+
+;;アイテム
+(defmethod click-command-btn ((btn use-item-btn) unit)
+  (with-slots (action-state btn-list) *game*
+    (setf action-state :select-skill-mode
+	  btn-list nil)
+    (create-skill-or-item-btn unit (use-item unit))))
 
 ;;装備変更ボタン
 (defmethod click-command-btn ((btn change-equip-btn) unit)
@@ -671,10 +701,12 @@
     (with-slots (party) *game*
       (with-slots (x y movecost temparea) unit
 	(setf temparea nil)
-	(loop for v in '((0 1) (0 -1) (1 0) (-1 0))
-	      do
-		 (get-can-move-cell unit (+ x (car v)) (+ y (cadr v))
-				    range movecost enemies party nil sight?))
+	(if (= range 0)
+	    (push (list x y)  temparea) ;;自分自身
+	    (loop for v in '((0 1) (0 -1) (1 0) (-1 0))
+		  do
+		     (get-can-move-cell unit (+ x (car v)) (+ y (cadr v))
+					range movecost enemies party nil sight?)))
 	temparea))))
 
 (defmethod get-area ((unit e-unit) range sight?)
@@ -687,6 +719,10 @@
 		 (get-can-move-cell unit (+ x (car v)) (+ y (cadr v))
 				    range movecost party enemies nil sight?))
 	temparea))))
+;;----------------------------------------------------------------------------------
+;;レベルアップ
+(defun unit-level-up (unit)
+  )
 
 ;;----------------------------------------------------------------------------------
 ;; skillの効果範囲ゲット
@@ -786,24 +822,47 @@
 	  (setf (color dmg) (gk:vec4 1 1 1 1)))
       dmg)))
 
-;;魔法ダメージ判定
+;;精神抵抗値
+(defmethod get-mnd-resist ((unit monster))
+  (res-bonus unit))
+
+(defmethod get-mnd-resist ((unit unit))
+  (+ (level unit) (res-bonus unit)))
+
+;;魔法攻撃ダメージ判定
 (defun magic-damage-hit (atker defender)
   (with-slots (int-bonus magic-power) atker
     (with-slots (res-bonus) defender
       (let* ((m1 (dice 1 6))
 	     (m2 (dice 1 6))
-	     (mnd-res (if (eq (type-of defender) 'monster)
-			  res-bonus
-			  (+ (level defender) res-bonus)))
+	     (mnd-res (get-mnd-resist defender))
 	     (res1 (dice 1 6))
 	     (res2 (dice 1 6)))
 	(cond
 	  ((and (= m1 1) (= m2 1))
 	   "ミス")
 	  ((> (+ magic-power m1 m2) (+ mnd-res res1 res2))
-	    (magic-damage-calc))
+	    (+ magic-power (magic-damage-calc)))
 	  ((<= (+ magic-power m1 m2) (+ mnd-res res1 res2))
-	   (floor  (magic-damage-calc) 2)))))))
+	   (floor (+ magic-power (magic-damage-calc)) 2)))))))
+
+;;魔法の回復の場合のボーナス
+(defmethod get-heal-bonus ((skill skill) atker)
+  (magic-power atker))
+;;アイテムの回復の場合のボーナス 本来はレンジャーレベル
+(defmethod get-heal-bonus ((skill use-item) atker)
+  (+ (level atker) (int-bonus atker)))
+
+;;魔法回復ダメージ判定
+(defun magic-heal-hit (skill atker)
+  (let* ((m1 (dice 1 6))
+	 (m2 (dice 1 6))
+	 (num-bonus (get-heal-bonus skill atker)))
+    (cond
+      ((and (= m1 1) (= m2 1))
+       "ミス")
+      (t
+       (+ num-bonus (magic-damage-calc))))))
 
 
 ;;物理ダメージ判定
@@ -834,6 +893,41 @@
 	  ((<= (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
 	   "ミス"))))))
 
+;;生死判定
+(defun life-or-death (unit)
+  (with-slots (party) *game*
+    (with-slots (state level vit-bonus hp origin) unit
+      (let ((value (abs hp))
+	    (dice1 (dice 1 6))
+	    (dice2 (dice 1 6)))
+	(cond
+	  ((and (= dice1 1) (= dice2 1)) ;;1ゾロは死亡　消える
+	   (setf party (remove unit party :test #'equal)))
+	  ((and (= dice1 6) (= dice2 6) ;;6ゾロならHP1に戻し生きる
+		(not (eq state :swoon)))
+	   (setf hp 1))
+	  ((>= (+ level vit-bonus dice1 dice2) value) ;;判定成功で気絶状態
+	   (setf state :swoon (gk:x origin) (* +swoon+ 32)))
+	  ((< (+ level vit-bonus dice1 dice2) value) ;;判定失敗で死亡　消える
+	   (setf party (remove unit party :test #'equal))))))))
+
+;;死亡判定 モンスターの場合消す
+(defmethod death-verdict ((atker unit) (defender monster))
+  (with-slots (enemies) *battle-field*
+    (with-slots (hp level) defender
+      (when (>= 0 hp)
+	(setf enemies (remove defender enemies :test #'equal))
+	(with-slots (expe lvup-exp) atker
+	  (incf expe (* level 10))
+	  (when (>= expe lvup-exp)
+	    (unit-level-up atker)))))))
+
+;;死亡判定 プレイヤーユニットの場合 state:deadにしておく
+(defmethod death-verdict ((atker monster) (defender unit))
+  (with-slots (state hp) defender
+    (when (>= 0 hp)
+      (life-or-death defender))))
+
 ;;ダメージ計算して表示する位置とか設定 ダメージフォントオブジェクトを帰す  TODO
 (defun damage-proc (atker defender atking-type)
   (with-slots (dex-bonus) atker
@@ -845,18 +939,41 @@
 		       ((eq atking-type :magic)
 			(magic-damage-hit atker defender)))))
 	(take-damage defender dmg-num :enemy) ;; :ally以外ならマイナスダメージ
+	(death-verdict atker defender)
 	(create-damage-font atker defender dmg-num :enemy)))))
 
 ;;-------------------------------------------------------------------------
 ;; skillの処理
-(defun skill-proc (skill atker defender)
+;;応急手当 本来はレベルではなく、レンジャーレベル
+(defmethod skill-proc ((skill first-aid) atker defender)
+  (with-slots (level dex-bonus) atker
+    (with-slots (hp origin state) defender
+      (let ((dice1 (dice 1 6))
+	    (dice2 (dice 1 6))
+	    (value (abs hp))
+	    (string "ミス"))
+	(when (eq state :swoon)
+	  (cond
+	    ((and (= dice1 6) (= dice2 6))
+	     (setf hp 1 (gk:x origin) 0 state :inaction string "気絶"))
+	    ((and (= dice1 1) (= dice2 1))
+	     (life-or-death defender))
+	    ((>= (+ level dex-bonus dice1 dice2) value)
+	     (setf hp 1 (gk:x origin) 0 state :inaction string "気絶"))
+	    (t (life-or-death defender))))
+	(create-damage-font atker defender string :ally)))))
+
+;;普通のスキル
+(defmethod skill-proc ((skill skill) atker defender)
   (with-slots (power depend mp target atking-type) skill
     (let ((dmg-num (cond
 		     ((or (eq atking-type :short)
 			  (eq atking-type :long))
 		      (physical-damage-hit atker defender))
-		     ((eq atking-type :magic)
-		      (magic-damage-hit atker defender)))))
+		     ((eq atking-type :magic-atk)
+		      (magic-damage-hit atker defender))
+		     ((eq atking-type :magic-heal)
+		      (magic-heal-hit skill atker)))))
       (take-damage defender dmg-num target)
       (create-damage-font atker defender dmg-num target))))
 ;;-------------------------------------------------------------------------
@@ -1442,8 +1559,7 @@
   (with-slots (btn-list selected-skill selected-unit action-state) *game*
     (loop :for btn :in btn-list
 	  :do (when (collide-p *mouse* btn)
-		(print "mohge")
-		(let ((skill (getf *skill-list* (tag btn))))
+		(let ((skill (getf *skill-and-item-list* (tag btn))))
 		  (with-slots (range r rangemax) skill
 		    (setf action-state :skill-mode
 			  range (get-area selected-unit rangemax t)
@@ -1465,14 +1581,29 @@
       (left (select-skill-mode-left-click-event))
       (right (select-skill-mode-right-click-event)))))
 ;;------------------------------------------------------------------------------------
+;;スキル別のターゲット条件
+;;特別条件なければt
+(defmethod get-skill-target ((skill skill) target-unit)
+  t)
+;;ヒール
+(defmethod get-skill-target ((skill heal) target-unit)
+  (not (eq (state target-unit) :swoon)))
+;;応急手当
+(defmethod get-skill-target ((skill first-aid) target-unit)
+  (eq (state target-unit) :swoon))
 
+;;------------------------------------------------------------------------------------
+(defmethod used-item? ((item use-item))
+  t)
+
+(defmethod used-item? ((skill skill))
+  nil)
 ;;  skill mode スキルでターゲットを選択する場面
-
 ;;クリック
 (defun skill-mode-left-click-event ()
   (with-slots (x-for-obj y-for-obj) *mouse*
     (with-slots (selected-skill party action-state selected-unit temp-dmg) *game*
-      (with-slots (range target pos team scope atking-type) selected-skill
+      (with-slots (range target pos team scope atking-type tag) selected-skill
 	(let* ((targets (if (eq target :ally) party (enemies *battle-field*)))
 	       (mouse-x (floor x-for-obj 32))
 	       (mouse-y (floor y-for-obj 32))
@@ -1481,7 +1612,8 @@
 	  (loop :for xy :in scope
 		:do (let* ((x (car xy))
 			   (y (cadr xy))
-			   (tar (find-if #'(lambda (unit) (and (= x (x unit)) (= y (y unit)))) targets)))
+			   (tar (find-if #'(lambda (unit) (and (= x (x unit)) (= y (y unit))
+							       (get-skill-target selected-skill unit))) targets)))
 		      (when tar
 			(push tar target-units))))
 	  (when (and target-units
@@ -1492,6 +1624,9 @@
 	    (setf action-state :skill-anime
 		  pos (gk:vec2 (* mouse-x 32) (* mouse-y 32))
 		  team :player)
+	    (when (used-item? selected-skill) ;;もしアイテムを使用したら
+	      (with-slots (use-item) selected-unit
+		(setf use-item (remove tag use-item))))
 	    ))))))
 
 
@@ -1606,13 +1741,14 @@
   (with-slots (action-state party) *game*
     (cond
       ((and (eq action-state :player-turn)
-	    (every #'(lambda (unit) (eq (state unit) :end)) party))
-       (print "owaaaa")
+	    (every #'(lambda (unit) (or (eq (state unit) :end)
+					(eq (state unit) :swoon))) party))
        (setf action-state :enemy-turn)
        (dolist (p party)
 	 (with-slots (origin state) p
-	   (setf state :inaction
-		 (gk:x origin) 0))))
+	   (unless (eq state :swoon) ;;気絶してるモノ以外行動可に
+	     (setf state :inaction
+		   (gk:x origin) 0)))))
       ((and (eq action-state :enemy-turn)
 	    (every #'(lambda (unit) (eq (state unit) :end)) (enemies *battle-field*)))
        (setf action-state :player-turn)

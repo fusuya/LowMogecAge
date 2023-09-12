@@ -242,6 +242,7 @@
    (x2 :initarg :x2 :initform nil :accessor button/x2)
    (y1 :initarg :y1 :initform nil :accessor button/y1)
    (y2 :initarg :y2 :initform nil :accessor button/y2)
+   (description :initarg :description :initform nil :accessor button/description)
    (box? :initarg :box? :initform nil :accessor button/box?)
    ))
 
@@ -294,6 +295,9 @@
 (defclass skill-cmd-btn (command-btn)
   ())
 
+(defclass use-item-btn (command-btn)
+  ())
+
 (defclass change-equip-btn (command-btn)
   ())
 
@@ -309,6 +313,7 @@
 
 
 (defconstant +action-end+ 2)
+(defconstant +swoon+ 3)
 
 (my-enum +purple+ +red+ +green+ +blue+ +yellow+ +cyan+ +pink+ +white+)
 
@@ -542,6 +547,7 @@
    (weapon        :accessor weapon        :initform nil :initarg :weapon)
    (shield        :accessor shield        :initform nil :initarg :shield)
    (skill        :accessor skill        :initform nil :initarg :skill)
+   (use-item        :accessor use-item        :initform nil :initarg :use-item)
    (selected-cmd        :accessor selected-cmd        :initform nil :initarg :selected-cmd)
    (atked?       :accessor atked?       :initform nil  :initarg :atked?)
    (atking-enemy       :accessor atking-enemy       :initform nil  :initarg :atking-enemy)
@@ -655,7 +661,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost  #(1 -1 -1 2 2 -1 -1 1 1)
 	  lvuprate '(:hp 60 :str 10 :vit 30 :agi 20 :int 90 :res 60)
-	  canequip  '(:wand :item :armor :shield)
+	  canequip  '(:staff :item :armor :shield)
 	  origin (gk:vec2 0 (* 32 +img-p-sorcerer+))
 	  id :sorcerer)))
 
@@ -888,31 +894,7 @@
 
 
 
-(defclass skill ()
-  ((name       :accessor name      :initform nil :initarg :name)
-   (rangemin   :accessor rangemin  :initform 0   :initarg :rangemin)
-   (rangemax   :accessor rangemax  :initform 0   :initarg :rangemax)
-   (atking-type    :accessor atking-type   :initform :magic :initarg :atking-type)
-   (r   :accessor r  :initform 0   :initarg :r)
-   (scope   :accessor scope  :initform nil   :initarg :scope) ;;スキルの発動範囲
-   (temparea   :accessor temparea  :initform nil   :initarg :temparea)
-   (range   :accessor range  :initform nil   :initarg :range) ;;スキルの射程距離
-   (target   :accessor target  :initform 0   :initarg :target)
-   (element   :accessor element  :initform 0   :initarg :element)
-   (power   :accessor power  :initform 0   :initarg :power)
-   (dmg-table   :accessor dmg-table  :initform 0   :initarg :dmg-table)
-   (critical   :accessor critical  :initform 0   :initarg :critical)
-   (mp   :accessor mp  :initform 0   :initarg :mp)
-   (status   :accessor status  :initform 0   :initarg :status)
-   (depend   :accessor depend  :initform 0   :initarg :depend)
-   (origin   :accessor origin  :initform 0   :initarg :origin)
-   (pos   :accessor pos  :initform 0   :initarg :pos)
-   (img   :accessor img  :initform 0   :initarg :img)
-   (frame   :accessor frame  :initform 0   :initarg :frame)
-   (max-frame   :accessor max-frame  :initform 0   :initarg :max-frame)
-   (interval   :accessor interval  :initform 0   :initarg :interval)
-   (team   :accessor team  :initform 0   :initarg :team)
-   ))
+
 
 (defclass itemdesc ()
   ((name       :accessor name      :initform nil :initarg :name)
@@ -1072,19 +1054,84 @@
     (0 0 0 4 6 7 10 10 12 12 13 14 15)
     (0 0 0 4 6 8 10 10 12 12 13 15 15)))
 
-;;　スキル
-(my-enum +heal+ +fire+)
 
-(defparameter *skill-list*
-  `(:heal ,(make-instance 'skill :name "ヒール" :target :ally :r 0 :mp 3 :rangemin 1 :rangemax 5
-				 :element :holy :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
-				 :max-frame 100 :interval 20 :atking-type :magic :critical 99
-				 :dmg-table (nth 10 *default-damage-table-list*))
-    :fire ,(make-instance 'skill :name "ファイア" :target :enemy :r 1 :mp 3 :rangemin 1 :rangemax 5
-				 :element :fire :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +fire+ 32))
-				 :max-frame 120 :interval 20 :atking-type :magic
-				 :critical 10 :dmg-table (nth 10 *default-damage-table-list*))
+;;　スキル
+(my-enum +heal+ +fire+ +first-aid+ +skill-max+)
+
+;;ボタン説明分
+(defparameter *btn-description*
+  '(:wait "待機:行動終了"
+    :change-equip "装備変更:装備変更画面に切り替える"
+    :normal-attack "通常攻撃:普通の攻撃"
+    :skill "スキル:なんかスキル使う"
+    :use-item "アイテム：なんかアイテム使う"
+    :normal-move "通常移動:移動後に行動できる"
+    :fast-move "全力移動:移動距離は長いが、移動後に行動できない"
+    :fire "ファイア：ふぁいあ！"
+    :heal "ヒール：回復魔法 気絶状態の味方には使えない"
+    :first-aid "応急手当：気絶状態の味方をHP1で起こす、かもしれない"
+    :healing-potion "回復薬：HPを回復する"
     ))
+
+(defclass skill ()
+  ((name       :accessor name      :initform nil :initarg :name)
+   (rangemin   :accessor rangemin  :initform 0   :initarg :rangemin)
+   (rangemax   :accessor rangemax  :initform 0   :initarg :rangemax)
+   (atking-type    :accessor atking-type   :initform :magic :initarg :atking-type)
+   (r   :accessor r  :initform 0   :initarg :r)
+   (scope   :accessor scope  :initform nil   :initarg :scope) ;;スキルの発動範囲
+   (temparea   :accessor temparea  :initform nil   :initarg :temparea)
+   (range   :accessor range  :initform nil   :initarg :range) ;;スキルの射程距離
+   (target   :accessor target  :initform 0   :initarg :target)
+   (element   :accessor element  :initform 0   :initarg :element)
+   (power   :accessor power  :initform 0   :initarg :power)
+   (dmg-table   :accessor dmg-table  :initform 0   :initarg :dmg-table)
+   (critical   :accessor critical  :initform 0   :initarg :critical)
+   (mp   :accessor mp  :initform 0   :initarg :mp)
+   (status   :accessor status  :initform 0   :initarg :status)
+   (depend   :accessor depend  :initform 0   :initarg :depend)
+   (origin   :accessor origin  :initform 0   :initarg :origin)
+   (pos   :accessor pos  :initform 0   :initarg :pos)
+   (img   :accessor img  :initform 0   :initarg :img)
+   (frame   :accessor frame  :initform 0   :initarg :frame)
+   (max-frame   :accessor max-frame  :initform 0   :initarg :max-frame)
+   (interval   :accessor interval  :initform 0   :initarg :interval)
+   (team   :accessor team  :initform 0   :initarg :team)
+   (tag   :accessor tag  :initform 0   :initarg :tag)
+   ))
+
+
+(defclass use-item (skill)
+  ())
+(defclass healing-potion (use-item)
+  ())
+
+(defclass first-aid (skill)
+  ())
+(defclass heal (skill)
+  ())
+(defclass fire (skill)
+  ())
+
+(defparameter *skill-and-item-list*
+  `(:heal ,(make-instance 'heal :name "ヒール" :target :ally :r 0 :mp 3 :rangemin 1 :rangemax 5
+				 :element :holy :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99
+				 :dmg-table (nth 10 *default-damage-table-list*))
+    :fire ,(make-instance 'fire :name "ファイア" :target :enemy :r 1 :mp 3 :rangemin 1 :rangemax 5
+				 :element :fire :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +fire+ 32))
+				 :max-frame 120 :interval 20 :atking-type :magic-atk
+				 :critical 10 :dmg-table (nth 10 *default-damage-table-list*))
+    :first-aid ,(make-instance 'first-aid :name "応急手当" :target :ally :r 0 :mp 0 :rangemin 1 :rangemax 1
+					  :depend :int :img :skill-img :atking-type :magic
+					  :origin (gk:vec2 0 (* +heal+ 32))
+					  :max-frame 120 :interval 20)
+    :healing-potion ,(make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0
+				 :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99
+				 :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
+    ))
+
 
 
 
