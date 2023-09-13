@@ -1,5 +1,5 @@
 (in-package :lowmogecage)
-;;TODO クエスト　買い物　町
+;;TODO クエスト　買い物　町 レヴェルアップ　ｵｶﾈ増減
 ;; スキル増やす スキルのターゲット
 (gk:defgame lowmogecage () ()
   (:viewport-width *window-w*)
@@ -50,13 +50,37 @@
 		      (setf right nil)))))
 
 (defun bind-key-event ()
-  (with-slots (space1 a key1 key2 key3 key4 key5 key0 w s d c) *keystate*
+  (with-slots (space1 a key1 key2 key3 key4 key5 key6 key7 key8 key9 key0 w s d c z x v b) *keystate*
     (gk:bind-button :space :pressed
 		    (lambda ()
 		      (setf space1 t)))
     (gk:bind-button :space :released
 		    (lambda ()
 		      (setf space1 nil)))
+    (gk:bind-button :z :pressed
+		    (lambda ()
+		      (setf z t)))
+    (gk:bind-button :z :released
+		    (lambda ()
+		      (setf z nil)))
+    (gk:bind-button :v :pressed
+		    (lambda ()
+		      (setf v t)))
+    (gk:bind-button :v :released
+		    (lambda ()
+		      (setf v nil)))
+    (gk:bind-button :b :pressed
+		    (lambda ()
+		      (setf b t)))
+    (gk:bind-button :b :released
+		    (lambda ()
+		      (setf b nil)))
+    (gk:bind-button :x :pressed
+		    (lambda ()
+		      (setf x t)))
+    (gk:bind-button :x :released
+		    (lambda ()
+		      (setf x nil)))
     (gk:bind-button :a :pressed
 		    (lambda ()
 		      (setf a t)))
@@ -117,6 +141,30 @@
     (gk:bind-button :5 :released
 		    (lambda ()
 		      (setf key5 nil)))
+    (gk:bind-button :6 :pressed
+		    (lambda ()
+		      (setf key6 t)))
+    (gk:bind-button :6 :released
+		    (lambda ()
+		      (setf key6 nil)))
+    (gk:bind-button :7 :pressed
+		    (lambda ()
+		      (setf key7 t)))
+    (gk:bind-button :7 :released
+		    (lambda ()
+		      (setf key7 nil)))
+    (gk:bind-button :8 :pressed
+		    (lambda ()
+		      (setf key8 t)))
+    (gk:bind-button :8 :released
+		    (lambda ()
+		      (setf key8 nil)))
+    (gk:bind-button :9 :pressed
+		    (lambda ()
+		      (setf key9 t)))
+    (gk:bind-button :9 :released
+		    (lambda ()
+		      (setf key9 nil)))
     (gk:bind-button :0 :pressed
 		    (lambda ()
 		      (setf key0 t)))
@@ -147,12 +195,15 @@
 	(when skill1
 	  (setf (skill chara) skill1))
 	(when use-item
-	  (setf (use-item chara) use-item))
+	  (loop :for x :in use-item
+		:do (setf (equiped x) (name chara))
+		    (push x (use-item chara))
+		    (push x item)))
 	(push weapon item)
 	(push armor item)))))
 ;; debug
 (defun test-create-party-chara ()
-  (push-chara-init-party +job_warrior+ 'p-warrior (list :first-aid) (list :healing-potion))
+  (push-chara-init-party +job_warrior+ 'p-warrior (list :first-aid) (get-use-item-data (list :healing-potion)))
   (push-chara-init-party +job_sorcerer+ 'p-sorcerer (list :first-aid :fire))
   (push-chara-init-party +job_priest+ 'p-priest (list :first-aid :heal))
   (push-chara-init-party +job_s_knight+ 'p-s-knight (list :first-aid))
@@ -164,6 +215,7 @@
   (set-font)
   (bind-key-event)
   (setf *game* (make-instance 'game :state :world-map
+			      :money 3000
 			      :item (create-item-n +w_max+)
 			      :world-pos (gk:vec2 200 400)
 				    :scroll (gk:vec2 0 0)
@@ -289,6 +341,49 @@
 (defun open-equip-menu ()
   (create-item-btn)
   (create-next-prev-btn))
+;;------------------------------------------------------------------------------------
+;;店売ってるアイテムのボタン作る
+(defun create-sale-item-btn ()
+  (with-slots (selected-town btn-list) *game*
+    (with-slots (sale-item sale-item-page) selected-town
+	(setf btn-list nil)
+	(loop :for i :from (* sale-item-page *sale-item-show-max*) :below (length sale-item)
+	      :repeat *sale-item-show-max*
+	      :for posx = 160
+	      :for posy :from 680 :downto 0 :by 40
+	      :do (let* ((itemun (nth i sale-item)))
+		    (setf (new itemun) t)
+		    (push (make-instance 'sale-item-btn
+					 :pos (gk:vec2 posx posy)
+					 :w 250 :h 38
+					 :price (price itemun)
+					 :item itemun
+					 :font *font48*
+					 :color (gk:vec4 1 1 1 1)
+					 :string (name itemun))
+			  btn-list))))))
+
+;;店の次へ前へボタン
+(Defun create-shop-next-prev-end-btn ()
+  (with-slots (btn-list) *game*
+    (let ((next-btn (make-instance 'shop-next-item-page
+				   :pos (gk:vec2 570 60) :box? t
+				   :w 60 :h 40 :font *font48*
+				   :color (gk:vec4 1 1 1 1)
+				   :string "次→"))
+	  (prev-btn (make-instance 'shop-prev-item-page
+				   :pos (gk:vec2 140 60) :box? t
+				   :w 60 :h 40 :font *font48*
+				   :color (gk:vec4 1 1 1 1)
+				   :string "←前"))
+	  (end-btn (make-instance 'end-shop-btn :pos (gk:vec2 30 40) :box? t
+						:w 70 :h 40 :font *font48*
+						:color (gk:vec4 1 1 1 1)
+						:string "戻る")))
+      (push next-btn btn-list)
+      (push prev-btn btn-list)
+      (push end-btn btn-list))))
+
 
 ;;------------------------------------------------------------------------------------
 (defmethod equip-item ((item weapondesc) unit)
@@ -314,13 +409,20 @@
       (setf (equiped shield) nil))
     (setf shield item
 	  (equiped shield) name)))
-
+;;盾装備
 (defmethod equip-item ((item shielddesc) unit)
   (with-slots (shield name weapon) unit
     (if weapon
 	(unless (eq (hand weapon) :2h)
 	  (equip-shield item unit))
 	(equip-shield item unit))))
+
+;;アイテム装備
+(defmethod equip-item ((item use-item) unit)
+  (with-slots (use-item name) unit
+    (when (> 3 (length use-item))
+      (setf (equiped item) name)
+      (push item use-item))))
 
 ;; btn event ----------------------------------------------------------------
 
@@ -330,13 +432,14 @@
     (setf state :world-map
 	  btn-list nil)))
 
+;;町メニューボタン
 (defun create-town-menu-button ()
   (with-slots (btn-list) *game*
     (setf btn-list nil)
     (loop :for posx = 80
 	  :for posy :from 400 :to 1000 :by 70
-	  :for kind :in (list 'town-exit-btn 'quest-btn 'recruit-btn 'shop-btn)
-	  :for str :in '("町を出る" "クエスト" "仲間募集" "買い物")
+	  :for kind :in (list 'town-exit-btn 'recruit-btn 'shop-btn)
+	  :for str :in '("町を出る" "仲間募集" "買い物")
 	  :do (let ((btn (make-instance kind :pos (gk:vec2 posx posy)
 					     :w 210 :h 50
 					     :font *font64*
@@ -412,14 +515,63 @@
   (with-slots (item equiped-unit) btn
     (with-slots (selected-unit) *game*
       (with-slots (canequip name str shield) selected-unit
-	(with-slots (category equiped required-str hand) item
+	(with-slots (category equiped required-str hand new) item
+	  (print category)
 	  (when (and (find category canequip)
 		     (>= str required-str)
 		     (null equiped-unit))
 	    (equip-item item selected-unit)
+	    (setf new nil)
 	    (create-item-btn)
 	    (create-next-prev-btn)))))))
-;;------------------------------------------------------------------------------------
+
+;;町メニュー
+;;買い物ボタン
+(defmethod btn-click-event ((btn shop-btn))
+  (with-slots (btn-list action-state) *game*
+    (setf btn-list nil
+	  action-state :shop)
+    (create-sale-item-btn)
+    (create-shop-next-prev-end-btn)))
+
+;;店から戻るボタン
+(defmethod btn-click-event ((btn end-shop-btn))
+  (with-slots (btn-list action-state) *game*
+    (setf btn-list nil
+	  action-state :town-menu)
+    (create-town-menu-button)))
+
+;;店次へボタン
+(defmethod btn-click-event ((btn shop-next-item-page))
+  (with-slots (selected-town) *game*
+    (with-slots (sale-item-page sale-item) selected-town
+      (let ((max-item-page (floor (length sale-item) *sale-item-show-max*)))
+	(cond
+	  ((> max-item-page sale-item-page)
+	   (incf sale-item-page))
+	  ((= max-item-page sale-item-page)
+	   (setf sale-item-page 0)))
+	(create-sale-item-btn)
+	(create-shop-next-prev-end-btn)))))
+
+;;店前へボタン
+(defmethod btn-click-event ((btn shop-prev-item-page))
+  (with-slots (selected-town) *game*
+    (with-slots (sale-item-page sale-item) selected-town
+      (let ((max-item-page (floor (length sale-item) *sale-item-show-max*)))
+	(cond
+	  ((= sale-item-page 0)
+	   (setf sale-item-page max-item-page))
+	  ((> sale-item-page 0)
+	   (decf sale-item-page)))
+	(create-sale-item-btn)
+	(create-shop-next-prev-end-btn)))))
+
+;;店の商品ボタン
+(defmethod btn-click-event ((btn sale-item-btn))
+  (with-slots (item) btn
+    (push (shallow-copy-object item) (game/item *game*))))
+  ;;------------------------------------------------------------------------------------
 ;;敵の攻撃を受けるか判定をnilに戻す
 (defun init-unit-atked-pos (units)
     (loop :for e :in units
@@ -483,7 +635,7 @@
 	      :return t))))
 ;;----------------------------------------------------------------------------------
 ;; skill btn
-(defun create-skill-or-item-btn (unit skill-or-item)
+(defun create-skill-btn (unit skill)
   (with-slots (pos) unit
     (let* ((w 60) (h 17)
 	   (btn-x (if (>= (gk:x pos) *origin-window-w/2*)
@@ -498,7 +650,7 @@
 			 (- posy h))
 			(t (+ posy (* h 2) h))))
 	   (skill-list (if (> btn-y 32)
-			   skill-or-item (reverse skill-or-item)))
+			   skill (reverse skill)))
 	   (func (if (> btn-y 32)
 		     #'- #'+)))
       (loop :for sk :in skill-list
@@ -508,9 +660,35 @@
 						  :description (getf *btn-description* sk)
 						  :string name)
 			(game/btn-list *game*))))
-      ;;(print (button/pos (car (game/btn-list *game*))))
       )))
-
+;;----------------------------------------------------------------------------------
+;; item btn
+(defun create-item-cmd-btn (unit use-item)
+  (with-slots (pos) unit
+    (let* ((w 60) (h 17)
+	   (btn-x (if (>= (gk:x pos) *origin-window-w/2*)
+		      (- (gk:x pos) w)
+		      (+ (gk:x pos) 35)))
+	   (posy (gk:y pos))
+	   (btn-y (cond ((>= posy 512)
+			 (+ 526 h))
+			((< posy 32)
+			 -10)
+			((<= posy 32)
+			 (- posy h))
+			(t (+ posy (* h 2) h))))
+	   (item-list (if (> btn-y 32)
+			   use-item (reverse use-item)))
+	   (func (if (> btn-y 32)
+		     #'- #'+)))
+      (loop :for item :in item-list
+	    :do (push (make-instance 'use-item-btn :pos (gk:vec2 btn-x (setf btn-y (funcall func btn-y h)))
+						   :w w :h h :color (gk:vec4 1 1 1 1) :font *font18*
+						   :description (getf *btn-description* (tag item))
+						   :item item
+						   :string (name item))
+		      (game/btn-list *game*))))
+      ))
 
 ;;----------------------------------------------------------------------------------
 
@@ -633,14 +811,14 @@
   (with-slots (action-state btn-list) *game*
     (setf action-state :select-skill-mode
 	  btn-list nil)
-    (create-skill-or-item-btn unit (skill unit))))
+    (create-skill-btn unit (skill unit))))
 
 ;;アイテム
 (defmethod click-command-btn ((btn use-item-btn) unit)
   (with-slots (action-state btn-list) *game*
-    (setf action-state :select-skill-mode
+    (setf action-state :select-item-mode
 	  btn-list nil)
-    (create-skill-or-item-btn unit (use-item unit))))
+    (create-item-cmd-btn unit (use-item unit))))
 
 ;;装備変更ボタン
 (defmethod click-command-btn ((btn change-equip-btn) unit)
@@ -1553,6 +1731,35 @@
       (left (attack-mode-left-click-event))
       (right (attack-mode-right-click-event)))))
 ;;------------------------------------------------------------------------------------
+;; select item mode
+;;クリック
+(defun select-item-mode-left-click-event ()
+  (with-slots (btn-list selected-skill selected-unit action-state) *game*
+    (loop :for btn :in btn-list
+	  :do (when (collide-p *mouse* btn)
+		(let ((item (item btn)))
+		  (with-slots (range r rangemax) item
+		    (setf action-state :skill-mode
+			  range (get-area selected-unit rangemax t)
+			  selected-skill item))
+		  (setf btn-list nil)
+		  (return))))))
+
+;;左クリック
+(defun select-item-mode-right-click-event ()
+  (with-slots (btn-list action-state selected-unit) *game*
+    (setf action-state :select-cmd-mode
+	  btn-list nil)
+    (create-action-command-btn selected-unit)))
+
+
+(defun select-item-event ()
+  (with-slots (left right) *mouse*
+    (cond
+      (left (select-item-mode-left-click-event))
+      (right (select-item-mode-right-click-event)))))
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
 ;; select skill mode
 ;;クリック
 (defun select-skill-mode-left-click-event ()
@@ -1602,7 +1809,7 @@
 ;;クリック
 (defun skill-mode-left-click-event ()
   (with-slots (x-for-obj y-for-obj) *mouse*
-    (with-slots (selected-skill party action-state selected-unit temp-dmg) *game*
+    (with-slots (selected-skill party action-state selected-unit temp-dmg item) *game*
       (with-slots (range target pos team scope atking-type tag) selected-skill
 	(let* ((targets (if (eq target :ally) party (enemies *battle-field*)))
 	       (mouse-x (floor x-for-obj 32))
@@ -1626,17 +1833,24 @@
 		  team :player)
 	    (when (used-item? selected-skill) ;;もしアイテムを使用したら
 	      (with-slots (use-item) selected-unit
-		(setf use-item (remove tag use-item))))
+		(setf use-item (remove selected-skill use-item :test #'equal)
+		      item (remove selected-skill item :test #'equal))))
 	    ))))))
 
 
 ;;左クリック
 (defun skill-mode-right-click-event ()
   (with-slots (selected-unit selected-skill action-state btn-list) *game*
-    (setf selected-skill nil
-	  btn-list nil
-	  action-state :select-skill-mode)
-    (create-skill-btn selected-unit)))
+    (with-slots (use-item skill) selected-unit
+      (setf btn-list nil)
+      (cond
+	((used-item? selected-skill)
+	 (setf action-state :select-item-mode)
+	 (create-item-cmd-btn selected-unit use-item))
+	(t
+	 (create-skill-btn selected-unit skill)
+	 (setf action-state :select-skill-mode)))
+      (setf selected-skill nil))))
 
 ;;スキルの効果範囲を更新
 (defun update-skill-scope ()
@@ -1680,6 +1894,26 @@
 
 ;;------------------------------------------------------------------------------------
 ;;装備メニュー画面
+(defmethod remove-equip-item ((item weapondesc))
+  )
+;;鎧外す
+(defmethod remove-equip-item ((item armordesc))
+  (with-slots (selected-unit) *game*
+    (with-slots (armor) selected-unit
+      (setf (equiped armor) nil
+	    armor nil))))
+;;盾外す
+(defmethod remove-equip-item ((item shielddesc))
+  (with-slots (selected-unit) *game*
+    (with-slots (shield) selected-unit
+      (setf (equiped shield) nil
+	    shield nil))))
+;;アイテム外す
+(defmethod remove-equip-item ((item use-item))
+  (with-slots (selected-unit) *game*
+    (with-slots (use-item) selected-unit
+      (setf (equiped item) nil
+	    use-item (remove item use-item :test #'equal)))))
 
 ;;装備を外す
 (defun remove-equip (btn)
@@ -1687,19 +1921,7 @@
     (with-slots (selected-unit) *game*
       (with-slots (weapon armor shield name) selected-unit
 	(when (equal equiped-unit name)
-	  (cond
-	    ;; ((and weapon
-	    ;; 	  (eq (type-of item) 'weapondesc))
-	    ;;  (setf (equiped weapon) nil
-	    ;; 	   weapon nil))
-	    ((and armor
-		  (eq (type-of item) 'armordesc))
-	     (setf (equiped armor) nil
-		   armor nil))
-	    ((and shield
-		  (eq (type-of item) 'shielddesc))
-	     (setf (equiped shield) nil
-		   shield nil)))
+	  (remove-equip-item item)
 	  (create-item-btn)
 	  (create-next-prev-btn))))))
 
@@ -1922,7 +2144,7 @@
 ;;マップデータ作成
 (defun set-world-map-data ()
   (with-slots (x y) *mouse*
-    (with-slots (key1 key2 key3 key4 key5 key0) *keystate*
+    (with-slots (key1 key2 key3 key4 key5 key6 key7 key8 key9 key0 c z v b) *keystate*
       (with-slots (scroll) *game*
 	(let ((arr-x (floor (+ x (gk:x scroll)) 32))
 	      (arr-y (floor (+ y (gk:y scroll)) 32)))
@@ -1930,12 +2152,20 @@
 	  ;;(print key1)
 	  (world-map-scroll)
 	  (cond
-	    (key0 (setf (aref *world-map-test-arr* arr-y arr-x) 0))
-	    (key1 (setf (aref *world-map-test-arr* arr-y arr-x) 1))
-	    (key2 (setf (aref *world-map-test-arr* arr-y arr-x) 2))
-	    (key3 (setf (aref *world-map-test-arr* arr-y arr-x) 3))
-	    (key4 (setf (aref *world-map-test-arr* arr-y arr-x) 4))
-	    (key5 (setf (aref *world-map-test-arr* arr-y arr-x) 5)))
+	    (key0 (setf (aref *world-map-data* arr-y arr-x) 0))
+	    (key1 (setf (aref *world-map-data* arr-y arr-x) 1))
+	    (key2 (setf (aref *world-map-data* arr-y arr-x) 2))
+	    (key3 (setf (aref *world-map-data* arr-y arr-x) 3))
+	    (key4 (setf (aref *world-map-data* arr-y arr-x) 4))
+	    (key5 (setf (aref *world-map-data* arr-y arr-x) 5))
+	    (key6 (setf (aref *world-map-data* arr-y arr-x) 6))
+	    (key7 (setf (aref *world-map-data* arr-y arr-x) 7))
+	    (key8 (setf (aref *world-map-data* arr-y arr-x) 8))
+	    (key9 (setf (aref *world-map-data* arr-y arr-x) 9))
+	    (c    (setf (aref *world-map-data* arr-y arr-x) 'c))
+	    (v    (setf (aref *world-map-data* arr-y arr-x) 'v))
+	    (b    (setf (aref *world-map-data* arr-y arr-x) 'b))
+	    (z    (setf (aref *world-map-data* arr-y arr-x) 'z)))
 	  )))))
 
 ;;----------------------------------------------------------------------------------------------------
@@ -1973,7 +2203,7 @@
       (2 1)
       (3 1)
       (4 1)
-      (5 2))))
+      ((5 6 7 8 9 z c v b) 2))))
 
 ;;ワールドユニット移動
 (defun update-world-unit-pos ()
@@ -2038,7 +2268,7 @@
 			    (< (gk:x pos) 0)
 			    (>= (gk:y pos) 3200)
 			    (< (gk:y pos) 0)
-			    (= 0 (get-world-cell pos)))
+			    (eq 0 (get-world-cell pos)))
 		    (setf monster-symbol (remove monster monster-symbol :test #'equal))))))))
 
 ;;モンスターシンボル生成 5体
@@ -2048,7 +2278,7 @@
 	  :do
 	     (let* ((start-x 0)
 		    (start-y 0))
-	       (loop :while (= (aref *world-map-data* start-y start-x) 0)
+	       (loop :while (eq (aref *world-map-data* start-y start-x) 0)
 		     :do (setf start-x (random-minmax 3 96)  start-y (random-minmax 3 96)))
 	       (push  (make-instance 'monster-symbol :x start-x :y start-y :pos (gk:vec2 (* start-x 32) (* start-y 32))
 						     :img-id :monster-img :v (gk:vec2 (1- (random 3)) (1- (random 3)))
@@ -2083,7 +2313,7 @@
 
 ;;ワールドマップ更新
 (defun world-map-update ()
-  (with-slots (world-pos move-goal move scroll move-paths state frame) *game*
+  (with-slots (world-pos move-goal move scroll move-paths state frame selected-town action-state) *game*
     (world-map-scroll)
     (let ((temp-pos (math:copy-vec2 world-pos)))
       (when (zerop (mod frame 100))
@@ -2100,8 +2330,8 @@
 			(>= move (gk:y diff-pos) (- move)))
 	       (setf move-goal nil))))))
       (let ((cell (get-world-cell world-pos)))
-	(cond
-	  ((= cell 5) ;; +town+
+	(case cell
+	  ((5 6 7 8 9 z c v b) ;; +town+
 	   (let* ((diff-posx (- (gk:x world-pos) (gk:x temp-pos)))
 		  (diff-posy (- (gk:y world-pos) (gk:y temp-pos))))
 	     (cond
@@ -2116,13 +2346,16 @@
 		(incf (gk:y world-pos) 16)))
 	     (setf state :town
 		   move-goal nil
-		   move-paths nil)
+		   move-paths nil
+		   action-state :town-menu
+		   selected-town (getf *town-list* cell))
 	     (create-town-menu-button)))
-	  ((collide-player-monster-in-world)
-	   (go-battle-mode)))))
+	  (t
+	   (when (collide-player-monster-in-world)
+	     (go-battle-mode))))))
     ))
 ;;----------------------------------------------------------------------------------------------------
-
+;;町イベント
 (defun town-event ()
   (with-slots (btn-list) *game*
     (with-slots (left) *mouse*
@@ -2132,12 +2365,18 @@
 		 (when (collide-p *mouse* btn)
 		   (btn-click-event btn)))))))
 
+;;店イベント
+(defun town-shop-event ()
+  (town-event))
+
 ;;----------------------------------------------------------------------------------------------------
 (defmethod gk:act ((app lowmogecage))
   (with-slots (state selected-unit action-state frame) *game*
     (case state
       (:town
-       (town-event))
+       (case action-state
+	 (:town-menu (town-event))
+	 (:shop (town-shop-event))))
       (:world-map-test
        (set-world-map-data))
       (:world-map
@@ -2163,6 +2402,8 @@
 	  (after-move-event))
 	 (:attack-mode
 	  (attack-mode-event))
+	 (:select-item-mode
+	  (select-item-event))
 	 (:select-skill-mode
 	  (select-skill-event))
 	 (:skill-mode
@@ -2190,7 +2431,7 @@
     (draw-mouse-test )
     (case state
       (:town
-       (draw-town-menu))
+       (draw-town))
       (:world-map-test
        (draw-world-map-data))
       (:world-map

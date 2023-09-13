@@ -260,6 +260,9 @@
    (new        :accessor new        :initform nil      :initarg :new)
    (equiped-unit    :accessor equiped-unit        :initform nil      :initarg :equiped-unit)))
 
+(defclass sale-item-btn (equip-item-btn)
+  ((price       :accessor price        :initform 0      :initarg :price)))
+
 (defclass next-item-page (button)
   ())
 (defclass prev-item-page (button)
@@ -268,6 +271,15 @@
   ())
 
 (Defclass shop-btn (button)
+  ())
+
+(defclass end-shop-btn (button)
+  ())
+
+(defclass shop-prev-item-page (button)
+  ())
+
+(defclass shop-next-item-page (button)
   ())
 
 (defclass recruit-btn (button)
@@ -296,7 +308,7 @@
   ())
 
 (defclass use-item-btn (command-btn)
-  ())
+  ((item :initarg :item :initform nil :accessor item)))
 
 (defclass change-equip-btn (command-btn)
   ())
@@ -306,6 +318,7 @@
 
 (defclass skill-btn (command-btn)
   ((tag :initarg :tag :initform (gk:vec2 0 0) :accessor tag)))
+
 
 ;;アイテムリスト表示マックス
 (defparameter *item-show-max* 20)
@@ -347,17 +360,12 @@
    (getitem         :accessor game/getitem     :initform nil    :initarg :getitem)
    (selected-unit   :accessor game/selected-unit     :initform nil    :initarg :selected-unit)
    (selected-skill   :accessor game/selected-skill     :initform nil    :initarg :selected-skill)
+   (selected-town   :accessor game/selected-town     :initform nil    :initarg :selected-town)
    (turn            :accessor game/turn        :initform :ally  :initarg :turn)
+   (money            :accessor game/money        :initform :0  :initarg :money)
    (prestate        :accessor game/prestate    :initform nil    :initarg :prestate)
    (temp-dmg        :accessor game/temp-dmg    :initform nil    :initarg :temp-dmg)
    (dmg-font        :accessor game/dmg-font    :initform nil    :initarg :dmg-font)
-   ;;アイテムのドロップ率 モンスターの装備
-   (warrior-weapon    :accessor warrior-weapon     :initform nil    :initarg :warrior-weapon)
-   (sorcerer-weapon   :accessor sorcerer-weapon    :initform nil    :initarg :sorcerer-weapon)
-   (thief-weapon      :accessor thief-weapon       :initform nil    :initarg :thief-weapon)
-   (knight-weapon     :accessor knight-weapon      :initform nil    :initarg :knight-weapon)
-   (priest-weapon     :accessor priest-weapon      :initform nil    :initarg :priest-weapon)
-   (archer-weapon     :accessor archer-weapon      :initform nil    :initarg :archer-weapon)
    ))
 
 
@@ -401,8 +409,14 @@
    (key3     :accessor key3     :initform nil :initarg :key3)
    (key4     :accessor key4     :initform nil :initarg :key4)
    (key5     :accessor key5     :initform nil :initarg :key5)
+   (key6     :accessor key6     :initform nil :initarg :key6)
+   (key7     :accessor key7     :initform nil :initarg :key7)
+   (key8     :accessor key8     :initform nil :initarg :key8)
+   (key9     :accessor key9     :initform nil :initarg :key9)
    (key0     :accessor key0     :initform nil :initarg :key0)
    (z     :accessor z     :initform nil :initarg :z)
+   (v     :accessor v     :initform nil :initarg :v)
+   (b     :accessor b     :initform nil :initarg :b)
    (w     :accessor w     :initform nil :initarg :w)
    (s     :accessor s     :initform nil :initarg :s)
    (d     :accessor d     :initform nil :initarg :d)
@@ -924,7 +938,7 @@
 (defclass armordesc (itemdesc)
   ())
 
-(defclass shielddesc (itemdesc)
+(defclass shielddesc (armordesc)
   ())
 
 
@@ -1101,7 +1115,7 @@
    ))
 
 
-(defclass use-item (skill)
+(defclass use-item (skill itemdesc)
   ())
 (defclass healing-potion (use-item)
   ())
@@ -1128,12 +1142,14 @@
 					  :max-frame 120 :interval 20)
     :healing-potion ,(make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0
 				 :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
-				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99
+				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
 				 :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
     ))
 
-
-
+;;使用アイテムのデータをゲット
+(defun get-use-item-data (list)
+  (loop :for tag :in list
+	:collect (shallow-copy-object (getf *skill-and-item-list* tag))))
 
 ;; (defun get-cell-data (cell data)
 ;;   (case data

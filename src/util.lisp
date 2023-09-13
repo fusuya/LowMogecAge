@@ -2,7 +2,7 @@
 
 
 (defun random-minmax (mini maxa)
-  (+ mini (1+ (random (- maxa  mini) ))))
+  (+ mini (1+ (random (max 1 (- maxa  mini))))))
 
 
 (defun dice (n maxi)

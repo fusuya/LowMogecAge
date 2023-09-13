@@ -1,33 +1,36 @@
 (in-package :lowmogecage)
 ;;武器 heal:傷薬
-(my-enum +w_knife+ +w_stiletto+ +w_dagger+ +w_Kukri+ +short_sword+ +w_epee+
+(my-enum ;;剣
+	 +w_knife+ +w_stiletto+ +w_dagger+ +w_Kukri+ +short_sword+ +w_epee+
 	 +w_Katzbalger+ +w_rapier+  +w_sabel+ +w_estoc+ +w_long_sword+ +w_broad_sword+
 	 +w_bastard-sword+ +w_falchion+ +w_two_hand_sword+ +w_shamshier+ +w_graet_sword+
 	 +w_fast_spike+  +w_flissa+ +w_schiavona+
 	 +w_defender+ +w_talwar+ +w_steal_blade+ +w_flamberge+ +w_dragon_slayer+
-	 
+	 ;;槍
 	 +w_javelin+ +w_short_spear+ +w_spear+ +w_long_spear+ +w_pillar+
 	 +w_trident+  +w_Ahlspiess+ +w_pike+ 
-	 
+	 ;;弓
 	 +w_short_bow+  +w_normal_bow+ +w_long_bow+ +w_heavy_bow+ +w_light_bow+
 	 +w_wrapped_bow+ +w_fast_bow+
 	 
-	 
+	 ;;斧
 	 +w_sickle+ +w_hand_ax+ +w_Bhuj+ +w_battle_ax+ +w_great_ax+ +w_heavy_ax+
 	 +w_Bulloova+ +w_Minotaur_ax+
 	 +w_Tomahawk+ +w_abarzin+ +w_long_ax+ +w_Halberd+ +w_glaive+
-
+	 ;;杖
 	 +w_mage_staff+ +w_quater_staff+ +w_ifrit_beard+ +w_mana_staff+ +w_reach_staff+
-	 
+	 ;;鎧
 	 +a_cloth_Armor+ +a_point_guard+ +a_soft_Leather+ +a_hard_leather+ +a_aramid_coat+
 	 +a_Breast_armor+ +a_bone_best+ +a_sprint_armor+ +a_chain_mail+
 	 +a_plate_armor+ +a_suit_armor+ +a_ateel_guard+ +a_Lamellar_armor+
 	 +a_Brigandine+ +a_coat_of_plate+ +a_fotress+
 	 
-	  
+	 ;;盾
 	 +a_buckler+ +a_round_shield+ +a_kite_shield+ +a_tower_shield+
 	 +a_target_shield+ +a_heater_shield+  +a_spike_shield+ +a_great_Wall+
 	 +a_great_parry+
+	 ;;アイテム
+	 +i_healing_potion+
 	 +w_max+
 	 )
 
@@ -262,18 +265,28 @@
    (make-instance 'shielddesc :category :shield :name "スパイクシールド" :required-str 13 :price 1800 :def 2 :avoid 1 :hand :1h)
    (make-instance 'shielddesc :category :shield :name "グレートウォール" :required-str 20 :price 1800 :def 3 :avoid -1 :hand :1h)
    (make-instance 'shielddesc :category :shield :name "グレートパリィ" :required-str 30 :price 3300 :def 3 :avoid 1 :hand :2h)
+   ;;使用アイテム
+   (make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0 :price 100
+				 :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
+				 :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
    ))
 
 (defparameter *weapondescs*
   (make-array (length *weapon-data*)
 	      :initial-contents *weapon-data*))
 
-
+;;アイテムのデータ持ってくる　武器なら威力表つける
 (defun item-make (itemnum)
   (let ((item-data (shallow-copy-object (aref *weapondescs* itemnum))))
     (when (eq 'weapondesc (type-of item-data))
       (setf (dmg-table item-data) (copy-list (nth (damage item-data) *default-damage-table-list*))))
     item-data))
+
+(defun get-item-data-from-list (list)
+  (loop :for num :in list
+	:collect (item-make num)))
+
 
 (defparameter *test-buki-item* nil)
 
