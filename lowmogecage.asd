@@ -8,6 +8,7 @@
                	 ((:file "package")
 		  (:file "world-map-data")
                   (:file "define")
+		  (:file "keybind")
 		  (:file "item")
 		  (:file "town-data")
 		  (:file "monster-data")
