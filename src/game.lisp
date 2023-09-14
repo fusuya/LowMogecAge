@@ -27,151 +27,7 @@
 	  ;;w nil  d nil s nil
 	  )))
 
-(defun bind-mouse-event ()
-  (with-slots ((mouse-x x) (mouse-y y) left right x-for-obj y-for-obj) *mouse*
-    (gamekit:bind-cursor (lambda (x y)
-			   "Save cursor position"
-			   (setf mouse-x (/ x *scale-w*)
-				 mouse-y (/ y *scale-h*)
-				 x-for-obj (/ mouse-x *scale-obj-w*)
-				 y-for-obj (/ mouse-y *scale-obj-h*))))
-    (gk:bind-button :mouse-left :pressed
-		    (lambda ()
-                      ;;(print "nnggngn")
-		      (setf left t)))
-    (gk:bind-button :mouse-left :released
-		    (lambda ()
-		      (setf left nil)))
-    (gk:bind-button :mouse-right :pressed
-		    (lambda ()
-		      (setf right t)))
-    (gk:bind-button :mouse-right :released
-		    (lambda ()
-		      (setf right nil)))))
 
-(defun bind-key-event ()
-  (with-slots (space1 a key1 key2 key3 key4 key5 key6 key7 key8 key9 key0 w s d c z x v b) *keystate*
-    (gk:bind-button :space :pressed
-		    (lambda ()
-		      (setf space1 t)))
-    (gk:bind-button :space :released
-		    (lambda ()
-		      (setf space1 nil)))
-    (gk:bind-button :z :pressed
-		    (lambda ()
-		      (setf z t)))
-    (gk:bind-button :z :released
-		    (lambda ()
-		      (setf z nil)))
-    (gk:bind-button :v :pressed
-		    (lambda ()
-		      (setf v t)))
-    (gk:bind-button :v :released
-		    (lambda ()
-		      (setf v nil)))
-    (gk:bind-button :b :pressed
-		    (lambda ()
-		      (setf b t)))
-    (gk:bind-button :b :released
-		    (lambda ()
-		      (setf b nil)))
-    (gk:bind-button :x :pressed
-		    (lambda ()
-		      (setf x t)))
-    (gk:bind-button :x :released
-		    (lambda ()
-		      (setf x nil)))
-    (gk:bind-button :a :pressed
-		    (lambda ()
-		      (setf a t)))
-    (gk:bind-button :a :released
-		    (lambda ()
-		      (setf a nil)))
-    (gk:bind-button :c :pressed
-		    (lambda ()
-		      (setf c t)))
-    (gk:bind-button :c :released
-		    (lambda ()
-		      (setf c nil)))
-    (gk:bind-button :w :pressed
-		    (lambda ()
-		      (setf w t)))
-    (gk:bind-button :w :released
-		    (lambda ()
-		      (setf w nil)))
-    (gk:bind-button :s :pressed
-		    (lambda ()
-		      (setf s t)))
-    (gk:bind-button :s :released
-		    (lambda ()
-		      (setf s nil)))
-    (gk:bind-button :d :pressed
-		    (lambda ()
-		      (setf d t)))
-    (gk:bind-button :d :released
-		    (lambda ()
-		      (setf d nil)))
-    (gk:bind-button :1 :pressed
-		    (lambda ()
-		      (setf key1 t)))
-    (gk:bind-button :1 :released
-		    (lambda ()
-		      (setf key1 nil)))
-    (gk:bind-button :2 :pressed
-		    (lambda ()
-		      (setf key2 t)))
-    (gk:bind-button :2 :released
-		    (lambda ()
-		      (setf key2 nil)))
-    (gk:bind-button :3 :pressed
-		    (lambda ()
-		      (setf key3 t)))
-    (gk:bind-button :3 :released
-		    (lambda ()
-		      (setf key3 nil)))
-    (gk:bind-button :4 :pressed
-		    (lambda ()
-		      (setf key4 t)))
-    (gk:bind-button :4 :released
-		    (lambda ()
-		      (setf key4 nil)))
-    (gk:bind-button :5 :pressed
-		    (lambda ()
-		      (setf key5 t)))
-    (gk:bind-button :5 :released
-		    (lambda ()
-		      (setf key5 nil)))
-    (gk:bind-button :6 :pressed
-		    (lambda ()
-		      (setf key6 t)))
-    (gk:bind-button :6 :released
-		    (lambda ()
-		      (setf key6 nil)))
-    (gk:bind-button :7 :pressed
-		    (lambda ()
-		      (setf key7 t)))
-    (gk:bind-button :7 :released
-		    (lambda ()
-		      (setf key7 nil)))
-    (gk:bind-button :8 :pressed
-		    (lambda ()
-		      (setf key8 t)))
-    (gk:bind-button :8 :released
-		    (lambda ()
-		      (setf key8 nil)))
-    (gk:bind-button :9 :pressed
-		    (lambda ()
-		      (setf key9 t)))
-    (gk:bind-button :9 :released
-		    (lambda ()
-		      (setf key9 nil)))
-    (gk:bind-button :0 :pressed
-		    (lambda ()
-		      (setf key0 t)))
-    (gk:bind-button :0 :released
-		    (lambda ()
-		      (setf key0 nil)))
-))
 
 
 
@@ -181,10 +37,8 @@
     (when (> 5 (length party))
       (let* ((weapon (job-init-weapon unit))
 	     (armor (item-make  +a_cloth_armor+))
-	     (chara (make-instance unit :job num ;;:hp 30 :maxhp 30
-				   ;;:weapon weapon
-					;;:vit 3 :str 7 :agi 2 :res 3 :int 3
-					;;:armor armor
+	     (chara (make-instance unit :job num
+				   :lvup-exp 1
 					:state :inaction
 					:name (nth (random (length *name-list*)) *name-list*))))
 	(setf (equiped weapon) (name chara)
@@ -203,11 +57,11 @@
 	(push armor item)))))
 ;; debug
 (defun test-create-party-chara ()
-  (push-chara-init-party +job_warrior+ 'p-warrior (list :first-aid) (get-use-item-data (list :healing-potion)))
+  (push-chara-init-party +job_warrior+ 'p-fighter (list :first-aid) (get-use-item-data (list :healing-potion)))
   (push-chara-init-party +job_sorcerer+ 'p-sorcerer (list :first-aid :fire))
   (push-chara-init-party +job_priest+ 'p-priest (list :first-aid :heal))
   (push-chara-init-party +job_s_knight+ 'p-s-knight (list :first-aid))
-  (push-chara-init-party +job_archer+ 'p-archer (list :first-aid)))
+  (push-chara-init-party +job_archer+ 'p-ranger (list :first-aid)))
 
 
 ;;開始前の初期化
@@ -253,6 +107,7 @@
   (setf *battle-field* (make-instance 'donjon))
   (create-battle-field))
 
+;;------------------------------------------------------------------------------
 
 ;;------------------------------------------------------------------------------
 ;;当たり判定
@@ -293,6 +148,27 @@
 	   (mouse-y (floor y-for-obj 32))
 	   (mouse-xy (list mouse-x mouse-y)))
       (find mouse-xy area :test #'equal))))
+;;------------------------------------------------------------------------------------
+;;レベルアップ時のステータスアップボタン
+(defun create-status-up-btn ()
+  (with-slots (btn-list) *game*
+    (let ((string-list (loop :repeat 2
+			       :collect (let ((dice1 (dice 1 6)))
+					  (case dice1
+					    (1 "器用度")
+					    (2 "敏捷度")
+					    (3 "筋力")
+					    (4 "生命力")
+					    (5 "知力")
+					    (6 "精神力"))))))
+      (loop :for string :in string-list
+	    :for posx :from 340 :to 900 :by 300
+	    :for posy = 550
+	    :do (push (make-instance 'status-up-btn :pos (gk:vec2 posx posy) :box? t
+						:string string :w 200 :h 60
+						:font *font64* :color (gk:vec4 1 0 1 1))
+		      btn-list)))))
+
 ;;--------------------------------------------------------------------------------
 ;;装備アイテムボタンつくる
 (defun create-item-btn ()
@@ -467,8 +343,7 @@
 ;;ゲーム開始ボタン TODO
 (defmethod btn-click-event ((btn game-start-btn))
   (with-slots (state action-state btn-list) *game*
-    (setf state :battle-ready
-          action-state :ready
+    (setf state :battle-ready ;;debug
 	  btn-list nil)
     (set-battle-field)
     (set-party-battle-ready-pos)
@@ -514,11 +389,10 @@
 (defmethod btn-click-event ((btn equip-item-btn))
   (with-slots (item equiped-unit) btn
     (with-slots (selected-unit) *game*
-      (with-slots (canequip name str shield) selected-unit
+      (with-slots (name str shield) selected-unit
 	(with-slots (category equiped required-str hand new) item
 	  (print category)
-	  (when (and (find category canequip)
-		     (>= str required-str)
+	  (when (and (>= str required-str)
 		     (null equiped-unit))
 	    (equip-item item selected-unit)
 	    (setf new nil)
@@ -571,7 +445,26 @@
 (defmethod btn-click-event ((btn sale-item-btn))
   (with-slots (item) btn
     (push (shallow-copy-object item) (game/item *game*))))
-  ;;------------------------------------------------------------------------------------
+
+;;レベルアップボタン
+(defmethod btn-click-event ((btn status-up-btn))
+  (with-slots (selected-unit action-state btn-list state) *game*
+    (with-slots (str dex agi vit res int level) selected-unit
+      (with-slots (string) btn
+	(cond
+	  ((string= string "筋力") (incf str))
+	  ((string= string "器用度") (incf dex))
+	  ((string= string "生命力") (incf vit))
+	  ((string= string "知力") (incf int))
+	  ((string= string "敏捷度") (incf agi))
+	  ((string= string "精神力") (incf res)))
+	(incf level)
+	(unit-status-adjust selected-unit)
+	(setf action-state :player-turn
+	      state :battle
+	      btn-list nil)))))
+
+;;------------------------------------------------------------------------------------
 ;;敵の攻撃を受けるか判定をnilに戻す
 (defun init-unit-atked-pos (units)
     (loop :for e :in units
@@ -949,10 +842,10 @@
 
 ;;プレイヤーユニットの攻撃とモンスター型ユニットの防御
 (defmethod physical-damage-calc ((atker unit) (defender monster))
-  (with-slots (weapon str int) atker
+  (with-slots (weapon add-damage) atker
     (with-slots (def) defender
       (with-slots (dmg-table critical) weapon
-	(max (- (%damage-calc critical dmg-table) def) 0)))))
+	(max (- (+ (%damage-calc critical dmg-table) add-damage) def) 0)))))
 
 ;;モンスター型の攻撃とプレイヤーユニットの防御
 (defmethod physical-damage-calc ((atker monster) (defender unit))
@@ -1071,23 +964,37 @@
 	  ((<= (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
 	   "ミス"))))))
 
+;;ユニット死亡　消す
+(defun unit-dead (unit)
+  (with-slots (party) *game*
+    (with-slots (weapon armor shield use-item) unit
+      (when weapon
+	(setf (equiped weapon) nil))
+      (when armor
+	(setf (equiped armor) nil))
+      (when shield
+	(setf (equiped shield) nil))
+      (when use-item
+	(dolist (i use-item)
+	  (setf (equiped i) nil)))
+      (setf party (remove unit party :test #'equal)))))
+
 ;;生死判定
 (defun life-or-death (unit)
-  (with-slots (party) *game*
-    (with-slots (state level vit-bonus hp origin) unit
-      (let ((value (abs hp))
-	    (dice1 (dice 1 6))
-	    (dice2 (dice 1 6)))
-	(cond
-	  ((and (= dice1 1) (= dice2 1)) ;;1ゾロは死亡　消える
-	   (setf party (remove unit party :test #'equal)))
-	  ((and (= dice1 6) (= dice2 6) ;;6ゾロならHP1に戻し生きる
-		(not (eq state :swoon)))
-	   (setf hp 1))
-	  ((>= (+ level vit-bonus dice1 dice2) value) ;;判定成功で気絶状態
-	   (setf state :swoon (gk:x origin) (* +swoon+ 32)))
-	  ((< (+ level vit-bonus dice1 dice2) value) ;;判定失敗で死亡　消える
-	   (setf party (remove unit party :test #'equal))))))))
+  (with-slots (state level vit-bonus hp origin) unit
+    (let ((value (abs hp))
+	  (dice1 (dice 1 6))
+	  (dice2 (dice 1 6)))
+      (cond
+	((and (= dice1 1) (= dice2 1)) ;;1ゾロは死亡　消える
+	 (unit-dead unit))
+	((and (= dice1 6) (= dice2 6) ;;6ゾロならHP1に戻し生きる
+	      (not (eq state :swoon)))
+	 (setf hp 1))
+	((>= (+ level vit-bonus dice1 dice2) value) ;;判定成功で気絶状態
+	 (setf state :swoon (gk:x origin) (* +swoon+ 32)))
+	((< (+ level vit-bonus dice1 dice2) value) ;;判定失敗で死亡　消える
+	 (unit-dead unit))))))
 
 ;;死亡判定 モンスターの場合消す
 (defmethod death-verdict ((atker unit) (defender monster))
@@ -1096,9 +1003,8 @@
       (when (>= 0 hp)
 	(setf enemies (remove defender enemies :test #'equal))
 	(with-slots (expe lvup-exp) atker
-	  (incf expe (* level 10))
-	  (when (>= expe lvup-exp)
-	    (unit-level-up atker)))))))
+	  ;;経験値を増やす
+	  (incf expe (* level 10)))))))
 
 ;;死亡判定 プレイヤーユニットの場合 state:deadにしておく
 (defmethod death-verdict ((atker monster) (defender unit))
@@ -1122,13 +1028,23 @@
 
 ;;-------------------------------------------------------------------------
 ;; skillの処理
-;;応急手当 本来はレベルではなく、レンジャーレベル
+;;魔香水
+(defmethod skill-proc ((skill magic-perfume) atker defender)
+  (with-slots (level int-bonus id) atker
+    (with-slots (mp maxmp) defender
+      (let* ((level-bonus (if (eq id :ranger) level 0))
+	     (num (+ level-bonus int-bonus)))
+	(setf mp (min (+ mp num) maxmp))
+	(create-damage-font atker defender num :ally)))))
+
+;;応急手当
 (defmethod skill-proc ((skill first-aid) atker defender)
-  (with-slots (level dex-bonus) atker
+  (with-slots (level dex-bonus id) atker
     (with-slots (hp origin state) defender
       (let ((dice1 (dice 1 6))
 	    (dice2 (dice 1 6))
 	    (value (abs hp))
+	    (level-bonus (if (eq id :ranger) level 0))
 	    (string "ミス"))
 	(when (eq state :swoon)
 	  (cond
@@ -1136,7 +1052,7 @@
 	     (setf hp 1 (gk:x origin) 0 state :inaction string "気絶"))
 	    ((and (= dice1 1) (= dice2 1))
 	     (life-or-death defender))
-	    ((>= (+ level dex-bonus dice1 dice2) value)
+	    ((>= (+ level-bonus dex-bonus dice1 dice2) value)
 	     (setf hp 1 (gk:x origin) 0 state :inaction string "気絶"))
 	    (t (life-or-death defender))))
 	(create-damage-font atker defender string :ally)))))
@@ -1153,6 +1069,7 @@
 		     ((eq atking-type :magic-heal)
 		      (magic-heal-hit skill atker)))))
       (take-damage defender dmg-num target)
+      (death-verdict atker defender)
       (create-damage-font atker defender dmg-num target))))
 ;;-------------------------------------------------------------------------
 
@@ -1180,6 +1097,24 @@
 
 ;;----------------------------------------------------------------------------------
 ;;攻撃アニメ
+
+;;攻撃アニメが終わった後の処理
+(defun after-anime-end-proc ()
+  (with-slots (action-state selected-unit state) *game*
+    (with-slots (team expe lvup-exp) selected-unit
+      (cond ((eq team :player)
+	     (cond ((>= expe lvup-exp) ;;レベルアップ
+		    (decf expe lvup-exp) ;;debug test
+		    (incf lvup-exp 100) ;;debug test
+		    (create-status-up-btn)
+		    (setf state :lvup-mode))
+		   (t
+		    (setf action-state :player-turn
+			  selected-unit nil))))
+	    (t
+	     (setf action-state :enemy-turn
+		   selected-unit nil))))))
+
 ;;攻撃した時の移動アニメーション計算
 (defun update-atk-img-pos (i)
   (cond
@@ -1212,22 +1147,19 @@
 ;;攻撃アニメ終わるまでループ TODO プレイヤーのターンか敵のターンで違う
 (defun update-atk-anime (atk-unit)
   (with-slots (action-state selected-unit temp-dmg dmg-font) *game*
-    (with-slots (atk-frame atking-enemy temp-pos pos (unit-state state) team origin) atk-unit
+    (with-slots (atk-frame atking-enemy temp-pos pos (unit-state state) team origin expe lvup-exp) atk-unit
       (when (= 7 atk-frame)
 	(push temp-dmg dmg-font))
       (update-atk-img atk-unit atk-frame)
       (if (and (= (gk:x temp-pos) (gk:x pos))
 	       (= (gk:y temp-pos) (gk:y pos)))
 	  (progn (setf atk-frame 0
-		       selected-unit nil
 		       atking-enemy nil
 		       temp-pos nil
 		       unit-state :end
 		       temp-dmg nil
 		       (gk:x origin) (* +action-end+ *origin-obj-w*))
-		 (if (eq team :player)
-		     (setf action-state :player-turn)
-		     (setf action-state :enemy-turn)))
+		 (after-anime-end-proc))
 	  (incf atk-frame)))))
 ;;---------------------------------------------------------------------------------
 ;;攻撃方向
@@ -1478,13 +1410,7 @@
 		 (cond
 		   ((find click-cell player-init-pos :test #'equal)
 		    (change-battle-ready-pos))
-		   ;; ((find cell-xy (movearea selected-unit) :test #'equal)
-		   ;;  (setf (move-paths selected-unit) (get-move-paths selected-unit cell-xy)
-		   ;; 	 state :battle
-		   ;; 	 (state selected-unit) :move
-		   ;; 	 action-state :move-anime))
 		   ))
-	       ;;(update-unit-move selected-unit click-cell))))
 	       (unit-select-battle-ready)))
 	  ((space1 *keystate*)
 	   (setf state :battle
@@ -1810,7 +1736,7 @@
 (defun skill-mode-left-click-event ()
   (with-slots (x-for-obj y-for-obj) *mouse*
     (with-slots (selected-skill party action-state selected-unit temp-dmg item) *game*
-      (with-slots (range target pos team scope atking-type tag) selected-skill
+      (with-slots (range target pos team scope atking-type tag (skill-mp mp)) selected-skill
 	(let* ((targets (if (eq target :ally) party (enemies *battle-field*)))
 	       (mouse-x (floor x-for-obj 32))
 	       (mouse-y (floor y-for-obj 32))
@@ -1823,8 +1749,11 @@
 							       (get-skill-target selected-skill unit))) targets)))
 		      (when tar
 			(push tar target-units))))
-	  (when (and target-units
+	  (when (and (>= (mp selected-unit) skill-mp)
+		     target-units
 		     (find mouse-xy range :test #'equal))
+	    ;;MP消費
+	    (decf (mp selected-unit) skill-mp)
 	    ;;ダメージフォントオブジェクト
 	    (loop :for target-enemy :in target-units
 		  :do (push (skill-proc selected-skill selected-unit target-enemy) temp-dmg))
@@ -1871,10 +1800,11 @@
       (right (skill-mode-right-click-event)))))
 
 ;;------------------------------------------------------------------------------------
+
 ;; skill anime
 (defun update-skill-anime ()
   (with-slots (selected-skill action-state selected-unit temp-dmg dmg-font) *game*
-    (with-slots (interval frame max-frame origin team pos img) selected-skill
+    (with-slots (interval frame max-frame origin pos img) selected-skill
       (incf frame)
       (when (= frame 7)
 	(setf dmg-font (copy-list temp-dmg)))
@@ -1886,11 +1816,8 @@
 		(state selected-unit) :end
 		(selected-cmd selected-unit) nil
 		(gk:x (origin selected-unit)) (* +action-end+ *origin-obj-w*)
-		selected-unit nil
 		temp-dmg nil)
-	  (if (eq team :player)
-	      (setf action-state :player-turn)
-	      (setf action-state :enemy-turn)))))))
+	  (after-anime-end-proc))))))
 
 ;;------------------------------------------------------------------------------------
 ;;装備メニュー画面
@@ -1960,24 +1887,34 @@
 
 ;;ターンエンド処理
 (defun turn-end? ()
-  (with-slots (action-state party) *game*
-    (cond
-      ((and (eq action-state :player-turn)
-	    (every #'(lambda (unit) (or (eq (state unit) :end)
-					(eq (state unit) :swoon))) party))
-       (setf action-state :enemy-turn)
-       (dolist (p party)
-	 (with-slots (origin state) p
-	   (unless (eq state :swoon) ;;気絶してるモノ以外行動可に
+  (with-slots (action-state party state) *game*
+    (with-slots (enemies) *battle-field*
+      (cond
+	;;敵全滅　ワールドマップへ
+	((null enemies)
+	 (setf state :world-map)
+	 (dolist (p party)
+	   (with-slots (hp origin state) p
+	     (when (eq state :swoon) ;;気絶してたらHP1で復活
+	       (setf hp 1))
 	     (setf state :inaction
-		   (gk:x origin) 0)))))
-      ((and (eq action-state :enemy-turn)
-	    (every #'(lambda (unit) (eq (state unit) :end)) (enemies *battle-field*)))
-       (setf action-state :player-turn)
-       (dolist (e (enemies *battle-field*))
-	 (with-slots (state origin) e
-	   (setf state :inaction
-		 (gk:x origin) 0)))))))
+		   (gk:x origin) 0))))
+	((and (eq action-state :player-turn)
+	      (every #'(lambda (unit) (or (eq (state unit) :end)
+					  (eq (state unit) :swoon))) party))
+	 (setf action-state :enemy-turn)
+	 (dolist (p party)
+	   (with-slots (origin state) p
+	     (unless (eq state :swoon) ;;気絶してるモノ以外行動可に
+	       (setf state :inaction
+		     (gk:x origin) 0)))))
+	((and (eq action-state :enemy-turn)
+	      (every #'(lambda (unit) (eq (state unit) :end)) (enemies *battle-field*)))
+	 (setf action-state :player-turn)
+	 (dolist (e (enemies *battle-field*))
+	   (with-slots (state origin) e
+	     (setf state :inaction
+		   (gk:x origin) 0))))))))
 
 
 
@@ -2171,8 +2108,10 @@
 ;;----------------------------------------------------------------------------------------------------
 ;;ワールドマップ上のイベント
 (defun world-map-event ()
-  (with-slots (scroll move-goal move-paths world-pos) *game*
+  (with-slots (scroll move-goal move-paths world-pos frame flash-flag) *game*
     (with-slots (x y left) *mouse*
+      (when (zerop (mod frame 80))
+	  (setf flash-flag (null flash-flag)))
       (when left
 	;;(setf move-goal (gk:vec2 (+ x (gk:x scroll)) (+ y (gk:y scroll))))
 	(let* ((arr-x (floor (+ x (gk:x scroll)) 32))
@@ -2305,7 +2244,6 @@
 (defun go-battle-mode ()
   (with-slots (state action-state btn-list) *game*
     (setf state :battle-ready
-          action-state :ready
 	  btn-list nil)
     (set-battle-field)
     (set-party-battle-ready-pos)
@@ -2368,7 +2306,16 @@
 ;;店イベント
 (defun town-shop-event ()
   (town-event))
-
+;;----------------------------------------------------------------------------------------------------
+;;レベルアップイベント
+(defun lvup-event ()
+  (with-slots (btn-list) *game*
+    (with-slots (left) *mouse*
+      (when left
+	(loop :for btn :in btn-list
+	      :do
+		 (when (collide-p *mouse* btn)
+		   (btn-click-event btn)))))))
 ;;----------------------------------------------------------------------------------------------------
 (defmethod gk:act ((app lowmogecage))
   (with-slots (state selected-unit action-state frame) *game*
@@ -2385,10 +2332,11 @@
       (:title
        (title-event))
       (:battle-ready
-       (case action-state
-	 (:ready (battle-ready-event))))
+       (battle-ready-event))
       (:equip-menu
        (equip-menu-event))
+      (:lvup-mode
+       (lvup-event))
       (:battle
        (case action-state
 	 (:player-turn
@@ -2432,6 +2380,8 @@
     (case state
       (:town
        (draw-town))
+      (:lvup-mode
+       (draw-lvup))
       (:world-map-test
        (draw-world-map-data))
       (:world-map

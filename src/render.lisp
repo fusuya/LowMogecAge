@@ -134,10 +134,11 @@
 
 ;;ボタンの説明
 (defun draw-btn-description (btn)
-  (with-slots (description) btn
-    (gk:draw-rect (gk:vec2 100 7) 500 30 :fill-paint (gk:vec4 0 0 0.3 0.6) :thickness 2
-		  :stroke-paint (gk:vec4 1 1 1 0.7) :rounding 3)
-    (gk:draw-text description (gk:vec2 110 15) :fill-color (gk:vec4 0.7 1 1 1) :font *font24*)))
+  (with-slots (description pos) btn
+    (let ((posy (if (< (gk:y pos) 300) 520 15)))
+      (gk:draw-rect (gk:vec2 100 (- posy 8)) 500 30 :fill-paint (gk:vec4 0 0 0.3 0.6) :thickness 2
+						    :stroke-paint (gk:vec4 1 1 1 0.7) :rounding 3)
+      (gk:draw-text description (gk:vec2 110 posy) :fill-color (gk:vec4 0.7 1 1 1) :font *font24*))))
 
 ;;枠ありボタン bg=黒背景
 (defmethod draw-text-btn-with-waku ((btn button) thickness adjust &key (bg nil) (rounding 1))
@@ -610,7 +611,7 @@
 (defmethod draw-item-info-with-cursor ((item weapondesc))
   (with-slots (selected-unit) *game*
     (when selected-unit
-      (with-slots (canequip weapon str shield) selected-unit
+      (with-slots (weapon str shield) selected-unit
 	(with-slots (name damage critical hit rangemin rangemax category equiped required-str hand) item
 	  ;;装備中の武器
 	  (when weapon
@@ -623,11 +624,11 @@
 		  (eq hand :2h))
 	     (gk:draw-text "盾を装備しているため" (gk:vec2 420 400) :fill-color (gk:vec4 1 0 0 1) :font *font32*)
 	     (gk:draw-text "装備できません" (gk:vec2 420 370) :fill-color (gk:vec4 1 0 0 1) :font *font32*))
-	    ((find category canequip)
-	     (draw-selected-weapon-info item shield str)
-	     (draw-diff-item-ability damage critical hit selected-unit))
 	    (t
-	     (gk:draw-text "装備できません" (gk:vec2 420 400) :fill-color (gk:vec4 1 1 1 1) :font *font32*))))))))
+	     (draw-selected-weapon-info item shield str)
+	     (draw-diff-item-ability damage critical hit selected-unit))))))))
+	    ;;(t
+	     ;;(gk:draw-text "装備できません" (gk:vec2 420 400) :fill-color (gk:vec4 1 1 1 1) :font *font32*))))))))
 
 ;;カーソル重なってる防具上号
 (defmethod draw-item-info-with-cursor ((item armordesc))
@@ -756,8 +757,19 @@
 	    :do (with-slots (pos img-id origin origin-h origin-w) monster
 		  (gk:draw-image (gk:subt pos scroll) img-id :origin origin :width origin-w :height origin-h))))))
 
+;;ワールドマップガイド
+(defun draw-world-map-guide ()
+  (with-slots (scroll flash-flag) *game*
+    (when flash-flag
+      (gk:draw-text "↑W" (gk:vec2 620 770) :fill-color (gk:vec4 1 1 0 1) :font *font64*)
+      (gk:draw-text "↓S" (gk:vec2 620 10) :fill-color (gk:vec4 0 1 1 1) :font *font64*)
+      (gk:draw-text "→D" (gk:vec2 1240 400) :fill-color (gk:vec4 0.5 0.3 1 1) :font *font64*)
+      (gk:draw-text "A←" (gk:vec2 4 400) :fill-color (gk:vec4 1 0 0.3 1) :font *font64*)
+      )))
+
 (defun draw-world ()
   (draw-world-map)
+  (draw-world-map-guide)
   (draw-world-unit))
 ;;---------------------------------------------------------------------------------------------------------
 ;;町
@@ -808,4 +820,42 @@
       (:town-menu (draw-town-menu))
       (:shop (draw-shop-item)))))
 
+;;---------------------------------------------------------------------------------------------------------
+;;レベルアップ
+(defun draw-lvup-description ()
+  (with-slots (selected-unit) *game*
+    (with-slots (str dex agi vit res int name id) selected-unit
+      (gk:draw-text "レベルアップ！" (gk:vec2 360 730) :fill-color (gk:vec4 0 0.5 1 1) :font *font128*)
+      (gk:draw-text "上昇させたいステータスを選んでください" (gk:vec2 160 670) :fill-color (gk:vec4 0.3 0.5 0.7 1) :font *font64*)
+      ;;現在のステータス
+      (gk:draw-rect (gk:vec2 300 60) 570 400 :stroke-paint *white* :thickness 3 :rounding 10)
+      (let ((posx 320)
+	    (posy 400)
+	    (des-posx 540)
+	    (line-width 50)
+	    (font *font48*))
+	(gk:draw-text (format nil "名前:~a ~a" name (getf *show-class* id)) (gk:vec2 posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil " 筋力 : ~2d" str) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-text "物理攻撃力に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "器用度: ~2d" dex) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-text "命中率に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "敏捷度: ~2d" agi) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-text "回避率に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil " 知力 : ~2d" int) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-text "魔法攻撃力に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "生命力: ~2d" vit) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-text "HPに影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "精神力: ~2d" res) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-text "MPに影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+      ))))
+
+(defun draw-lvup-btn ()
+  (with-slots (btn-list) *game*
+    (loop :for btn :in btn-list
+	  :do (draw-text-btn-with-waku btn 3 (gk:vec2 10 13) :rounding 9))))
+
+
+(defun draw-lvup ()
+  (draw-lvup-description)
+  (draw-lvup-btn))
 ;;---------------------------------------------------------------------------------------------------------

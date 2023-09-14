@@ -30,7 +30,7 @@
 	 +a_target_shield+ +a_heater_shield+  +a_spike_shield+ +a_great_Wall+
 	 +a_great_parry+
 	 ;;アイテム
-	 +i_healing_potion+
+	 +i_healing_potion+ +i_magic_perfume+
 	 +w_max+
 	 )
 
@@ -267,9 +267,13 @@
    (make-instance 'shielddesc :category :shield :name "グレートパリィ" :required-str 30 :price 3300 :def 3 :avoid 1 :hand :2h)
    ;;使用アイテム
    (make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0 :price 100
-				 :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				  :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				  :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
+				  :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
+   (make-instance 'magic-perfume :name "魔香水" :target :ally :r 0 :mp 0 :rangemin 1 :rangemax 1 :price 600
+				 :element :holy :power 0 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
 				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
-				 :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
+				 :dmg-table (nth 0 *default-damage-table-list*) :tag :magic-perfume)
    ))
 
 (defparameter *weapondescs*
@@ -302,13 +306,13 @@
 ;;ジョブ別初期武器
 (defun job-init-weapon (job)
   (case job
-    (p-warrior  (item-make +w_knife+))
+    (p-fighter  (item-make +w_knife+))
     (p-sorcerer  (item-make +w_mage_staff+))
     (p-s-knight  (item-make +w_javelin+))
     (p-priest  (item-make +w_mage_staff+))
     (p-p-knight  (item-make +w_javelin+))
-    (p-thief  (item-make +w_knife+))
-    (p-archer  (item-make +w_short_bow+))))
+    (p-scout  (item-make +w_knife+))
+    (p-ranger  (item-make +w_short_bow+))))
     ;; ((= job +job_sorcerer+) (item-make +w_rod+))
     ;; ((= job +job_priest+)   (item-make +w_staff+))
     ;; ((= job +job_archer+)   (item-make +w_bow+))

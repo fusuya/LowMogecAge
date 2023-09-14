@@ -22,8 +22,8 @@
 (defmethod initialize-instance :after ((e arrow-hood) &rest initargs)
   (declare (ignore initargs))
   (with-slots (job-name movecost def hit-value avoid-value atk-point id origin move
-	       vit-bonus res-bonus hp maxhp mp maxmp level) e
-    (setf job-name "アローーフッド" level 1
+	       vit-bonus res-bonus hp maxhp mp maxmp level rangemin rangemax) e
+    (setf job-name "アローーフッド" level 1 rangemin 2 rangemax 5
 	  move 5 hit-value 3 atk-point 1 avoid-value 0 def 1
 	  res-bonus 3 vit-bonus 2 hp 10 maxhp 10 mp 10 maxmp 10
 	  movecost #(1 -1 -1 2 2 3 -1 1 1)

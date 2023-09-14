@@ -7,7 +7,8 @@
 				     +w_javelin+ +w_short_spear+ +w_spear+ +w_long_spear+ +w_pillar+
 				     +w_short_bow+  +w_normal_bow+ +w_long_bow+ +w_heavy_bow+ +w_light_bow+
 				     +a_cloth_Armor+ +a_point_guard+ +a_soft_Leather+ +a_hard_leather+ +a_aramid_coat+
-				     +a_buckler+ +a_round_shield+ +a_kite_shield+ +a_tower_shield+ +i_healing_potion+))
+				     +a_buckler+ +a_round_shield+ +a_kite_shield+ +a_tower_shield+ +i_healing_potion+
+				     +i_magic_perfume+))
 
 (defclass town ()
   ((name       :accessor name      :initform nil :initarg :name)
