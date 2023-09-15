@@ -40,6 +40,7 @@
 
 
 (gk:register-resource-package :keyword (merge-pathnames "assets/" (asdf:system-source-directory :lowmogecage)))
+;;(gk:register-resource-package :keyword "./assets/")
 
 
 (gk:define-font :mplus "font/mplus-1mn-regular.ttf")
@@ -49,7 +50,18 @@
 (gk:define-image :world-map "img/worldmap.png")
 (gk:define-image :skill-img "img/skill.png")
 (gk:define-image :monster-img "img/monster-img.png")
-
+;;効果音
+(gk:define-sound :buy "sound/chest.wav")
+(gk:define-sound :heal "sound/heal-mogec.wav")
+(gk:define-sound :fire "sound/fire.wav")
+(gk:define-sound :cancel "sound/cancel-mogec.wav")
+(gk:define-sound :encount "sound/battle-start.wav")
+(gk:define-sound :normal-attack "sound/spear90.wav")
+(gk:define-sound :walk "sound/move90.wav")
+(gk:define-sound :button "sound/button.wav")
+(gk:define-sound :monster-dead "sound/enemy-dead.wav")
+(gk:define-sound :cash-exchange "sound/cash-exchange.wav")
+(gk:define-sound :miss "sound/miss.wav")
 
 ;;プレイヤー画像切り替えよう
 (defconstant +down+ 0)
@@ -253,7 +265,14 @@
 (defclass status-up-btn (button)
   ((tag       :accessor tag        :initform 0      :initarg :tag)))
 
+(defclass init-jon-btn (button)
+  ())
 
+(defclass create-init-party-end-btn (button)
+  ())
+
+(defclass temp-init-party-btn (button)
+  ())
 
 (defclass game-start-btn (button)
   ())
@@ -277,6 +296,12 @@
   ())
 
 (Defclass shop-btn (button)
+  ())
+
+(defclass inn-btn (button)
+  ())
+
+(defclass cash-exchange-btn (button)
   ())
 
 (defclass end-shop-btn (button)
@@ -358,6 +383,7 @@
    (monster-symbol           :accessor game/monster-symbol       :initform nil    :initarg :monster-symbol)
    (cursor          :accessor game/cursor      :initform 0      :initarg :cursor)
    (item            :accessor game/item        :initform nil    :initarg :item)
+   (cash-exchange-item  :accessor game/cash-exchange-item        :initform nil    :initarg :cash-exchange-item)
    (bgm             :accessor game/bgm         :initform :on    :initarg :bgm)
    (endtime         :accessor game/endtime     :initform 0      :initarg :endtime)
    (starttime       :accessor game/starttime   :initform 0      :initarg :starttime)
@@ -372,6 +398,7 @@
    (prestate        :accessor game/prestate    :initform nil    :initarg :prestate)
    (temp-dmg        :accessor game/temp-dmg    :initform nil    :initarg :temp-dmg)
    (dmg-font        :accessor game/dmg-font    :initform nil    :initarg :dmg-font)
+   (temp-init-party        :accessor game/temp-init-party    :initform nil    :initarg :temp-init-party)
    ))
 
 
@@ -461,9 +488,7 @@
 		    (make-instance 'cell :name "dummy" :heal nil :def 0 :avoid 0)
 		    (make-instance 'cell :name "dummy" :heal nil :def 0 :avoid 0))))
 
-;;ドロップアイテムリスト
-(defparameter *drop-item*
-  '(:boots :atkup :defup))
+
 
 (defclass donjon ()
   ((field             :accessor field              :initform nil    :initarg :field)  ;;マップ
@@ -493,9 +518,12 @@
    (maxy     :accessor maxy      :initform 0     :initarg :maxy)
    (y-dir    :accessor y-dir     :initform :up   :initarg :y-dir)
    (x-dir    :accessor x-dir     :initform :left :initarg :x-dir)
-   (color    :accessor color     :initform :left :initarg :color)
+   (color    :accessor color     :initform nil   :initarg :color)
    (font     :accessor font      :initform nil :initarg :font)
    ))
+
+(defclass drop-item-font (dmg-font)
+  ())
 
 (defclass itemtext (dmg-font)
   ((name :accessor name      :initform nil :initarg :name)
@@ -816,6 +844,9 @@
 (defparameter *init-class-list*
   '(:warrior :sorcerer :priest :archer :knight :thief :p-knight))
 
+(defparameter *jon-name-list*
+  '("戦士" "魔術師" "神官" "射手" "騎士" "天馬騎士" "盗賊"))
+
 (defparameter *show-class*
   '(:fighter "戦士" :sorcerer "魔術師" :priest "僧侶" :ranger "射手" :s-knight "騎士" :scout "盗賊"
     :p-knight "天馬騎士"))
@@ -926,6 +957,8 @@
 (defclass shielddesc (armordesc)
   ())
 
+(defclass cash-exchange (itemdesc)
+  ())
 
 
 (defun weapon-make (item)

@@ -38,7 +38,7 @@
       (let* ((weapon (job-init-weapon unit))
 	     (armor (item-make  +a_cloth_armor+))
 	     (chara (make-instance unit :job num
-				   :lvup-exp 1
+					:lvup-exp 100 ;;test
 					:state :inaction
 					:name (nth (random (length *name-list*)) *name-list*))))
 	(setf (equiped weapon) (name chara)
@@ -56,19 +56,37 @@
 	(push weapon item)
 	(push armor item)))))
 ;; debug
-(defun test-create-party-chara ()
-  (push-chara-init-party +job_warrior+ 'p-fighter (list :first-aid) (get-use-item-data (list :healing-potion)))
-  (push-chara-init-party +job_sorcerer+ 'p-sorcerer (list :first-aid :fire))
-  (push-chara-init-party +job_priest+ 'p-priest (list :first-aid :heal))
-  (push-chara-init-party +job_s_knight+ 'p-s-knight (list :first-aid))
-  (push-chara-init-party +job_archer+ 'p-ranger (list :first-aid)))
+(defun test-create-party-chara (string)
+  (cond
+    ((string= string "戦士")
+     (push-chara-init-party +job_warrior+ 'p-fighter (list :first-aid))) ;;(get-use-item-data (list :healing-potion)))
+    ((string= string "魔術師")
+     (push-chara-init-party +job_sorcerer+ 'p-sorcerer (list :first-aid :fire)))
+    ((string= string "神官")
+     (push-chara-init-party +job_priest+ 'p-priest (list :first-aid :heal)))
+    ((string= string "騎士")
+     (push-chara-init-party +job_s_knight+ 'p-s-knight (list :first-aid)))
+    ((string= string "射手")
+     (push-chara-init-party +job_archer+ 'p-ranger (list :first-aid)))
+    ((string= string "天馬騎士")
+     (push-chara-init-party +job_p_knight+ 'p-p-knight (list :first-aid)))
+    ((string= string "盗賊")
+     (push-chara-init-party +job_thief+ 'p-scout (list :first-aid)))))
+
+
+;;初期パーティデータ作成
+(defun create-init-party-data ()
+  (with-slots (temp-init-party party) *game*
+    (loop :for temp :in temp-init-party
+	  :do (with-slots (string) temp
+		(test-create-party-chara string)))))
 
 
 ;;開始前の初期化
 (defmethod gk:post-initialize ((app lowmogecage))
   (set-font)
   (bind-key-event)
-  (setf *game* (make-instance 'game :state :world-map
+  (setf *game* (make-instance 'game :state :title
 			      :money 3000
 			      :item (create-item-n +w_max+)
 			      :world-pos (gk:vec2 200 400)
@@ -85,7 +103,7 @@
 										 :w 150 :h 64
                                                   				 :font-size 64)))
 	*mouse* (make-instance 'mouse))
-  (test-create-party-chara)
+  ;;(test-create-party-chara)
   (bind-mouse-event))
 
 
@@ -259,7 +277,30 @@
       (push next-btn btn-list)
       (push prev-btn btn-list)
       (push end-btn btn-list))))
+;;------------------------------------------------------------------------------------
+;;初期パーティ作成用ボタン生成
+(defun create-init-job-btn ()
+  (with-slots (btn-list) *game*
+    (loop :for job-name :in *jon-name-list*
+	  :for posx = 150
+	  :for posy :from 600 :downto 0 :by 64
+	  :do (push (make-instance 'init-jon-btn :string job-name :w 200 :h 50
+						 :pos (gk:vec2 posx posy)
+						 :font *font64*
+						 :color *white*)
+		    btn-list))
+    (push (make-instance 'create-init-party-end-btn
+			 :string "はじめる" :w 200 :h 50 :box? t
+			 :pos (gk:vec2 930 220) :font *font64* :color *white*)
+	  btn-list)))
 
+;;初期パーティボタン ポジション再設定
+(defun adjust-init-party-btn ()
+  (with-slots (temp-init-party) *game*
+    (loop :for btn :in temp-init-party
+	  :for posy :from 600 :downto 0 :by 64
+	  :do (with-slots (pos) btn
+		(setf (gk:y pos) posy)))))
 
 ;;------------------------------------------------------------------------------------
 (defmethod equip-item ((item weapondesc) unit)
@@ -308,17 +349,23 @@
     (setf state :world-map
 	  btn-list nil)))
 
+(defparameter *town-description*
+  '("町を出る" "敵が落としたアイテムを売る" "HP・MPを回復する" "だれもいない" "買い物"))
+
 ;;町メニューボタン
 (defun create-town-menu-button ()
   (with-slots (btn-list) *game*
     (setf btn-list nil)
     (loop :for posx = 80
-	  :for posy :from 400 :to 1000 :by 70
-	  :for kind :in (list 'town-exit-btn 'recruit-btn 'shop-btn)
-	  :for str :in '("町を出る" "仲間募集" "買い物")
-	  :do (let ((btn (make-instance kind :pos (gk:vec2 posx posy)
-					     :w 210 :h 50
-					     :font *font64*
+	  :for posy :from 300 :to 1000 :by 70
+	  :for des :in *town-description*
+	  :for kind :in (list 'town-exit-btn 'cash-exchange-btn 'inn-btn 'recruit-btn 'shop-btn)
+	  :for str :in '("町を出る" "換金アイテムを売る ""宿屋" "仲間募集" "買い物")
+	  :do (let* ((len (length str))
+		     (btn (make-instance kind :pos (gk:vec2 posx posy)
+					     :w (* len 52) :h 50
+					      :font *font64*
+					      :description des
 					     :color (gk:vec4 1 1 1 1)
 					     :string str)))
 		(push btn btn-list)))))
@@ -343,11 +390,12 @@
 ;;ゲーム開始ボタン TODO
 (defmethod btn-click-event ((btn game-start-btn))
   (with-slots (state action-state btn-list) *game*
-    (setf state :battle-ready ;;debug
+    (setf state :create-init-party ;;debug
 	  btn-list nil)
-    (set-battle-field)
-    (set-party-battle-ready-pos)
-    (get-show-cell-coord)))
+    (create-init-job-btn)))
+    ;;(set-battle-field)
+    ;;(set-party-battle-ready-pos)
+    ;;(get-show-cell-coord)))
 
 
 
@@ -380,10 +428,13 @@
 
 ;;装備メニュー終了ボタン
 (defmethod btn-click-event ((btn end-equip-menu-btn))
-  (with-slots (state btn-list selected-unit) *game*
+  (with-slots (state btn-list selected-unit item item-page) *game*
     (setf state :battle
-	  btn-list nil)
-    (create-action-command-btn selected-unit)))
+	  btn-list nil
+	  itme-page 0)
+    (create-action-command-btn selected-unit)
+    (loop :for i :in item
+	  :do (setf (new i) nil))))
 
 ;;アイテムボタン
 (defmethod btn-click-event ((btn equip-item-btn))
@@ -403,16 +454,42 @@
 ;;買い物ボタン
 (defmethod btn-click-event ((btn shop-btn))
   (with-slots (btn-list action-state) *game*
+    (gk:play-sound :button)
     (setf btn-list nil
 	  action-state :shop)
     (create-sale-item-btn)
     (create-shop-next-prev-end-btn)))
 
+;;換金アイテム売却
+(defmethod btn-click-event ((btn cash-exchange-btn))
+  (with-slots (money cash-exchange-item) *game*
+    (when cash-exchange-item
+      (gk:play-sound :cash-exchange)
+      (loop :for item :in cash-exchange-item
+	    :do (let ((item-money (price (nth item *cash-exchange-item-list*))))
+		  (incf money item-money)))
+      (setf cash-exchange-item nil))))
+
+;;宿屋
+(defmethod btn-click-event ((btn inn-btn))
+  (with-slots (party) *game*
+    (gk:play-sound :heal)
+    (loop :for p :in party
+	  :do (with-slots (hp maxhp mp maxmp) p
+		(setf hp maxhp
+		      mp maxmp)))))
+
+;;仲間募集
+(defmethod btn-click-event ((btn recruit-btn))
+  )
+
 ;;店から戻るボタン
 (defmethod btn-click-event ((btn end-shop-btn))
-  (with-slots (btn-list action-state) *game*
+  (with-slots (btn-list action-state selected-town) *game*
     (setf btn-list nil
-	  action-state :town-menu)
+	  action-state :town-menu
+	  (sale-item-page selected-town) 0)
+    (gk:play-sound :cancel)
     (create-town-menu-button)))
 
 ;;店次へボタン
@@ -426,7 +503,8 @@
 	  ((= max-item-page sale-item-page)
 	   (setf sale-item-page 0)))
 	(create-sale-item-btn)
-	(create-shop-next-prev-end-btn)))))
+	(create-shop-next-prev-end-btn)
+	(gk:play-sound :button)))))
 
 ;;店前へボタン
 (defmethod btn-click-event ((btn shop-prev-item-page))
@@ -439,12 +517,17 @@
 	  ((> sale-item-page 0)
 	   (decf sale-item-page)))
 	(create-sale-item-btn)
-	(create-shop-next-prev-end-btn)))))
+	(create-shop-next-prev-end-btn)
+	(gk:play-sound :button)))))
 
 ;;店の商品ボタン
 (defmethod btn-click-event ((btn sale-item-btn))
-  (with-slots (item) btn
-    (push (shallow-copy-object item) (game/item *game*))))
+  (with-slots (money) *game*
+    (with-slots (item) btn
+      (when (>= money (price item))
+	(gk:play-sound :buy)
+	(push (shallow-copy-object item) (game/item *game*))
+	(decf money (price item))))))
 
 ;;レベルアップボタン
 (defmethod btn-click-event ((btn status-up-btn))
@@ -463,6 +546,37 @@
 	(setf action-state :player-turn
 	      state :battle
 	      btn-list nil)))))
+
+
+;;初期ジョブボタン
+(defmethod btn-click-event ((btn init-jon-btn))
+  (with-slots (btn-list temp-init-party) *game*
+    (with-slots (string pos font color w h) btn
+      (let ((party-num (length temp-init-party)))
+	(when (> 5 party-num)
+	  (gk:play-sound :button)
+	  (let ((posy (- 600 (* party-num 64))))
+	    (setf temp-init-party (append temp-init-party
+					  (list (make-instance 'temp-init-party-btn :string string :w w :h h
+						      :pos (gk:vec2 (+ (gk:x pos) 400) posy)
+						      :font font :color color))))))))))
+
+;;暫定初期パーティボタン
+(defmethod btn-click-event ((btn temp-init-party-btn))
+  (with-slots (btn-list temp-init-party) *game*
+    (gk:play-sound :cancel)
+    (setf temp-init-party (remove btn temp-init-party :test #'equalp))
+    (adjust-init-party-btn)))
+
+;;初期パーティ作成終了ゲーム開始ボタン
+(defmethod btn-click-event ((btn create-init-party-end-btn))
+  (with-slots (btn-list temp-init-party state) *game*
+    (when (> (length temp-init-party) 0)
+      (gk:play-sound :button)
+      (create-init-party-data)
+      (setf btn-list nil
+	    temp-init-party nil
+	    state :world-map))))
 
 ;;------------------------------------------------------------------------------------
 ;;敵の攻撃を受けるか判定をnilに戻す
@@ -723,6 +837,7 @@
 ;;待機
 (defmethod click-command-btn ((btn wait-cmd-btn) unit)
   (with-slots (btn-list action-state) *game*
+    (gk:play-sound :button)
     (setf btn-list nil
 	  action-state :player-turn)
     (unit-action-end unit)))
@@ -772,12 +887,11 @@
     (with-slots (party) *game*
       (with-slots (x y movecost temparea) unit
 	(setf temparea nil)
-	(if (= range 0)
-	    (push (list x y)  temparea) ;;自分自身
-	    (loop for v in '((0 1) (0 -1) (1 0) (-1 0))
-		  do
-		     (get-can-move-cell unit (+ x (car v)) (+ y (cadr v))
-					range movecost enemies party nil sight?)))
+	(push (list x y)  temparea) ;;自分自身
+	(when  (> range 0)
+	  (loop for v in '((0 1) (0 -1) (1 0) (-1 0))
+		do (get-can-move-cell unit (+ x (car v)) (+ y (cadr v))
+				      range movecost enemies party nil sight?)))
 	temparea))))
 
 (defmethod get-area ((unit e-unit) range sight?)
@@ -829,23 +943,28 @@
 
 
 ;;プレイヤーユニットの攻撃と敵人型ユニットの防御
-(defmethod physical-damage-calc ((atker unit) (defender e-unit))
-  (with-slots (weapon str int) atker
-    (with-slots (armor shield) defender
-      (with-slots (dmg-table critical) weapon
-	(let* ((def-num 0))
-	  (when armor
-	    (incf def-num (def armor)))
-	  (when shield
-	    (incf def-num (def shield)))
-	  (max (- (%damage-calc critical dmg-table) def-num) 0))))))
+;; (defmethod physical-damage-calc ((atker unit) (defender e-unit))
+;;   (with-slots (weapon str int) atker
+;;     (with-slots (armor shield) defender
+;;       (with-slots (dmg-table critical) weapon
+;; 	(let* ((def-num 0))
+;; 	  (when armor
+;; 	    (incf def-num (def armor)))
+;; 	  (when shield
+;; 	    (incf def-num (def shield)))
+;; 	  (max (- (%damage-calc critical dmg-table) def-num) 0))))))
 
 ;;プレイヤーユニットの攻撃とモンスター型ユニットの防御
 (defmethod physical-damage-calc ((atker unit) (defender monster))
-  (with-slots (weapon add-damage) atker
+  (with-slots (weapon add-damage shield) atker
     (with-slots (def) defender
-      (with-slots (dmg-table critical) weapon
-	(max (- (+ (%damage-calc critical dmg-table) add-damage) def) 0)))))
+      (with-slots (damage critical hand category) weapon
+	(let* ((shin-dmg (if (and (null shield)
+				  (eq hand :1hor2h))
+			    (2h-damage-by-category damage category)
+			    damage))
+	       (dmg-table (nth shin-dmg *default-damage-table-list*)))
+	(max (- (+ (%damage-calc critical dmg-table) add-damage) def) 0))))))
 
 ;;モンスター型の攻撃とプレイヤーユニットの防御
 (defmethod physical-damage-calc ((atker monster) (defender unit))
@@ -936,14 +1055,19 @@
        (+ num-bonus (magic-damage-calc))))))
 
 
-;;物理ダメージ判定
-(defun physical-damage-hit (atker defender)
-  (with-slots (dex-bonus hit-value) atker
+;;物理ダメージ命中判定 攻撃側プレイヤーユニット
+(defmethod physical-damage-hit ((atker unit) (defender monster))
+  (with-slots (dex-bonus hit-value weapon armor shield) atker
     (with-slots (agi-bonus avoid-value) defender
       (let* ((hit1 (dice 1 6))
 	     (hit2 (dice 1 6))
 	     (avoid1 (dice 1 6))
-	     (avoid2 (dice 1 6)))
+	     (avoid2 (dice 1 6))
+	     (weapon-hit (if (and weapon
+				  (null shield)
+				  (eq (hand weapon) :1hor2h))
+			     (2h-hit-by-category (hit weapon) (category weapon))
+			     (hit weapon))))
 	(format t "hit1:~a hit2:~a avoid1:~a avoid2:~a~%" hit1 hit2 avoid1 avoid2)
 	(cond
 	  ;;命中判定1ゾロはミス
@@ -959,9 +1083,41 @@
 	  ((and (= hit1 6) (= hit2 6))
 	   (physical-damage-calc atker defender))
 	  ;;以下命中判定と回避判定の比べあい
-	  ((> (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
+	  ((> (+ hit-value hit1 hit2 weapon-hit) (+ avoid-value avoid1 avoid2))
 	   (physical-damage-calc atker defender))
-	  ((<= (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2))
+	  ((<= (+ hit-value hit1 hit2 weapon-hit) (+ avoid-value avoid1 avoid2))
+	   "ミス"))))))
+
+;;物理ダメージ命中判定 攻撃側モンスターユニット
+(defmethod physical-damage-hit ((atker monster) (defender unit))
+  (with-slots (dex-bonus hit-value) atker
+    (with-slots (agi-bonus avoid-value armor shield) defender
+      (let* ((hit1 (dice 1 6))
+	     (hit2 (dice 1 6))
+	     (avoid1 (dice 1 6))
+	     (avoid2 (dice 1 6))
+	     (equip-avoid 0))
+        (when armor
+	  (incf equip-avoid (avoid armor)))
+	(when shield
+	  (incf equip-avoid (avoid shield)))
+	(cond
+	  ;;命中判定1ゾロはミス
+	  ((and (= hit1 1) (= hit2 1))
+	   "ミス")
+	  ;;回避判定6ゾロはミス
+	  ((= avoid1 6) (= avoid2 6)
+	   "ミス")
+	  ;;回避判定1ゾロは命中
+	  ((and (= avoid1 1) (= avoid2 1))
+	   (physical-damage-calc atker defender))
+	  ;;命中判定が6ゾロで回避判定が6ゾロ以外は命中
+	  ((and (= hit1 6) (= hit2 6))
+	   (physical-damage-calc atker defender))
+	  ;;以下命中判定と回避判定の比べあい
+	  ((> (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2 equip-avoid))
+	   (physical-damage-calc atker defender))
+	  ((<= (+ hit-value hit1 hit2) (+ avoid-value avoid1 avoid2 equip-avoid))
 	   "ミス"))))))
 
 ;;ユニット死亡　消す
@@ -996,11 +1152,39 @@
 	((< (+ level vit-bonus dice1 dice2) value) ;;判定失敗で死亡　消える
 	 (unit-dead unit))))))
 
+;;ドロップしたアイテムのオブジェクト作る
+(defun create-drop-item-font (defender drop-item)
+  (with-slots (dmg-font) *game*
+    (with-slots (pos) defender
+      (loop :for item :in drop-item
+	    :for y :from 0 :to 200 :by 30
+	    :do (let* ((drop-item-name (name (nth item *cash-exchange-item-list*)))
+		       (name-len (length drop-item-name))
+		       (posy (+ (gk:y pos) 30 y))
+		       (posx (- (gk:x pos) (* name-len 4))))
+		  (push (make-instance 'drop-item-font :dmg-num drop-item-name :pos (gk:vec2 posx posy)
+						       :maxy (+ posy 40) :color *white* :font *font18*)
+			dmg-font))))))
+
+
+;;アイテムドロップ判定
+(defun item-drop-proc (defender)
+  (with-slots (cash-exchange-item) *game*
+    (with-slots (drop) defender
+      (let* ((drop-dice (dice 2 6)) ;;アイテムドロップ
+	     (drop-item (funcall drop drop-dice)))
+	(cond
+	  ((null drop-item) nil)
+	  ((listp drop-item)
+	   (setf cash-exchange-item (append cash-exchange-item drop-item))
+	   (create-drop-item-font defender drop-item)))))))
+
 ;;死亡判定 モンスターの場合消す
 (defmethod death-verdict ((atker unit) (defender monster))
   (with-slots (enemies) *battle-field*
-    (with-slots (hp level) defender
+    (with-slots (hp level drop) defender
       (when (>= 0 hp)
+	(item-drop-proc defender)
 	(setf enemies (remove defender enemies :test #'equal))
 	(with-slots (expe lvup-exp) atker
 	  ;;経験値を増やす
@@ -1028,6 +1212,12 @@
 
 ;;-------------------------------------------------------------------------
 ;; skillの処理
+(defmethod skill-proc ((skill heal) atker defender)
+  (with-slots (target) skill
+    (let ((dmg-num (magic-heal-hit skill atker)))
+      (take-damage defender dmg-num target)
+      (create-damage-font atker defender dmg-num target))))
+
 ;;魔香水
 (defmethod skill-proc ((skill magic-perfume) atker defender)
   (with-slots (level int-bonus id) atker
@@ -1073,27 +1263,38 @@
       (create-damage-font atker defender dmg-num target))))
 ;;-------------------------------------------------------------------------
 
+;;ドロップアイテムのフォント更新
+(defmethod update-font ((item drop-item-font))
+  (with-slots (dmg-font) *game*
+    (with-slots (pos maxy) item
+      (incf (gk:y pos))
+      (when (>= (gk:y pos) maxy)
+	(setf dmg-font (remove item dmg-font :test #'equal))))))
+
 ;;ダメージフォントの位置更新
-(defun update-damage-font ()
+(defmethod update-font ((dmg dmg-font))
+  (with-slots (dmg-font) *game*
+    (with-slots (y-dir x-dir pos miny maxy) dmg
+      (cond
+	((eq :down y-dir)
+	 (if (eq x-dir :right)
+	     (incf (gk:x pos))
+	     (decf (gk:x pos)))
+	 (decf (gk:y pos) 1)
+	 (when (<= (gk:y pos) miny)
+	   (setf dmg-font (remove dmg dmg-font :test #'equal))))
+	((eq :up y-dir)
+	 (if (eq x-dir :right)
+	     (incf (gk:x pos))
+	     (decf (gk:x pos)))
+	 (incf (gk:y pos) 1)
+	 (when (>= (gk:y pos) maxy)
+	   (setf y-dir :down)))))))
+
+(defun update-fonts ()
   (with-slots (dmg-font) *game*
     (loop :for dmg :in dmg-font
-	  :do
-	     (with-slots (y-dir x-dir pos miny maxy) dmg
-	       (cond
-		 ((eq :down y-dir)
-		  (if (eq x-dir :right)
-		      (incf (gk:x pos))
-		      (decf (gk:x pos)))
-		  (decf (gk:y pos) 1)
-		  (when (<= (gk:y pos) miny)
-		    (setf dmg-font (remove dmg dmg-font :test #'equal))))
-		 ((eq :up y-dir)
-		  (if (eq x-dir :right)
-		      (incf (gk:x pos))
-		      (decf (gk:x pos)))
-		  (incf (gk:y pos) 1)
-		  (when (>= (gk:y pos) maxy)
-		    (setf y-dir :down))))))))
+	  :do (update-font dmg))))
 
 ;;----------------------------------------------------------------------------------
 ;;攻撃アニメ
@@ -1149,7 +1350,10 @@
   (with-slots (action-state selected-unit temp-dmg dmg-font) *game*
     (with-slots (atk-frame atking-enemy temp-pos pos (unit-state state) team origin expe lvup-exp) atk-unit
       (when (= 7 atk-frame)
-	(push temp-dmg dmg-font))
+	(push temp-dmg dmg-font)
+	(if (numberp (dmg-num temp-dmg))
+	    (gk:play-sound :normal-attack)
+	    (gk:play-sound :miss)))
       (update-atk-img atk-unit atk-frame)
       (if (and (= (gk:x temp-pos) (gk:x pos))
 	       (= (gk:y temp-pos) (gk:y pos)))
@@ -1317,6 +1521,7 @@
 	(update-pos diffx diffy selected-unit)
 	(when (and  (= (gk:x pos) goalposx)
 		    (= (gk:y pos) goalposy))
+	  (gk:play-sound :walk)
 	  (setf move-paths (cdr move-paths)
 		x (floor (gk:x pos) *origin-obj-w*)
 		y (floor (gk:y pos) *origin-obj-h*))
@@ -1800,14 +2005,18 @@
       (right (skill-mode-right-click-event)))))
 
 ;;------------------------------------------------------------------------------------
-
+(defmethod play-skill-sound ((skill heal))
+  (gk:play-sound :heal))
+(defmethod play-skill-sound ((skill fire))
+  (gk:play-sound :fire))
 ;; skill anime
 (defun update-skill-anime ()
   (with-slots (selected-skill action-state selected-unit temp-dmg dmg-font) *game*
     (with-slots (interval frame max-frame origin pos img) selected-skill
       (incf frame)
       (when (= frame 7)
-	(setf dmg-font (copy-list temp-dmg)))
+	(setf dmg-font (copy-list temp-dmg))
+	(play-skill-sound selected-skill))
       (when (zerop (mod frame interval))
 	(setf (gk:x origin) (- 32 (gk:x origin)))
 	(when (>= frame max-frame)
@@ -1887,18 +2096,20 @@
 
 ;;ターンエンド処理
 (defun turn-end? ()
-  (with-slots (action-state party state) *game*
+  (with-slots (action-state party state dmg-font) *game*
     (with-slots (enemies) *battle-field*
       (cond
 	;;敵全滅　ワールドマップへ
 	((null enemies)
-	 (setf state :world-map)
+	 (setf state :world-map
+	       dmg-font nil)
 	 (dolist (p party)
 	   (with-slots (hp origin state) p
 	     (when (eq state :swoon) ;;気絶してたらHP1で復活
 	       (setf hp 1))
 	     (setf state :inaction
 		   (gk:x origin) 0))))
+	;;プレイヤーターンから敵ターンへ
 	((and (eq action-state :player-turn)
 	      (every #'(lambda (unit) (or (eq (state unit) :end)
 					  (eq (state unit) :swoon))) party))
@@ -1908,6 +2119,7 @@
 	     (unless (eq state :swoon) ;;気絶してるモノ以外行動可に
 	       (setf state :inaction
 		     (gk:x origin) 0)))))
+	;;敵ターンからプレイヤーターンへ
 	((and (eq action-state :enemy-turn)
 	      (every #'(lambda (unit) (eq (state unit) :end)) (enemies *battle-field*)))
 	 (setf action-state :player-turn)
@@ -2116,7 +2328,7 @@
 	;;(setf move-goal (gk:vec2 (+ x (gk:x scroll)) (+ y (gk:y scroll))))
 	(let* ((arr-x (floor (+ x (gk:x scroll)) 32))
 	       (arr-y (floor (+ y (gk:y scroll)) 32)))
-	  (when (/= (aref *world-map-data* arr-y arr-x) 0) ;;0:海
+	  (when (not (eq (aref *world-map-data* arr-y arr-x) 0)) ;;0:海
 	    (let* ((goal (list arr-x arr-y))
 		   (startx (floor (gk:x world-pos) 32))
 		   (starty (floor (gk:y world-pos) 32))
@@ -2290,6 +2502,7 @@
 	     (create-town-menu-button)))
 	  (t
 	   (when (collide-player-monster-in-world)
+	     (gk:play-sound :encount)
 	     (go-battle-mode))))))
     ))
 ;;----------------------------------------------------------------------------------------------------
@@ -2317,6 +2530,23 @@
 		 (when (collide-p *mouse* btn)
 		   (btn-click-event btn)))))))
 ;;----------------------------------------------------------------------------------------------------
+;;初期パーティ作り
+;;とりあえずジョブ選ぶだけ
+
+
+
+(defun create-init-party-event ()
+  (with-slots (btn-list temp-init-party) *game*
+    (with-slots (left) *mouse*
+      (when left
+	(loop :for btn :in (append btn-list temp-init-party)
+	      :do
+		 (when (collide-p *mouse* btn)
+		   (btn-click-event btn)
+		   (return)))))))
+
+
+;;----------------------------------------------------------------------------------------------------
 (defmethod gk:act ((app lowmogecage))
   (with-slots (state selected-unit action-state frame) *game*
     (case state
@@ -2326,6 +2556,8 @@
 	 (:shop (town-shop-event))))
       (:world-map-test
        (set-world-map-data))
+      (:create-init-party
+       (create-init-party-event))
       (:world-map
        (world-map-event)
        (world-map-update))
@@ -2364,7 +2596,7 @@
 	 (:enemy-turn
 	  (update-enemies-action)
 	  (turn-end?)))
-       (update-damage-font)))
+       (update-fonts)))
     (init-mouse)
     (init-key)
     (incf frame)
@@ -2380,6 +2612,8 @@
     (case state
       (:town
        (draw-town))
+      (:create-init-party
+       (draw-create-init-party))
       (:lvup-mode
        (draw-lvup))
       (:world-map-test

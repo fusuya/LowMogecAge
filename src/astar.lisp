@@ -80,6 +80,12 @@ CL-USER 10 > (minimum '((a 1) (b -1) (c -2)) #'< #'second)
 				      (setf (node-parent m) n)
 				      (push m open)))))))))))))))
 ;;--------------------------------------------------------------------------------
+(defun replace-world-cell (cell)
+  (case cell
+    ((z c v b) 2)
+    (t cell)))
+    
+
 (defun world-astar (start goal cells movecost block-cell route tate yoko)
 ;;  (with-slots (tate yoko) *battle-field*
   (let ((open (list (make-node :pos start :g 0 :h (manhatan start goal)
@@ -101,7 +107,7 @@ CL-USER 10 > (minimum '((a 1) (b -1) (c -2)) #'< #'second)
 			   (>= (1- tate) (cadr next) 0)
 			   (not (find next block-cell :test #'equal)))
 		      (let ((m (find next open :test #'equal :key #'node-pos))
-			    (dist (aref movecost (aref cells (cadr next) (car next)))))
+			    (dist (aref movecost (replace-world-cell (aref cells (cadr next) (car next))))))
 			(when (>= dist 0)
 			  (if m
               		      (if (> (node-f m) (+ (node-g n) (node-h m) dist))

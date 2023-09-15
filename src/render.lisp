@@ -40,9 +40,17 @@
     ((eq category :sword)
      (+ damage 10))
     ((eq category :axe)
-     (+ damage 19))
+     (+ damage 10))
     ((eq category :spear)
-     (+ damage 5))))
+     (+ damage 5))
+    (t damage)))
+
+;;両手持ちの武器別命中
+(defun 2h-hit-by-category (hit category)
+  (cond
+    ((eq category :spear)
+     0)
+    (t hit)))
 
 ;;カーソルと重なってる店武器情報
 (defmethod draw-sale-item-info-with-cursor ((item weapondesc))
@@ -56,7 +64,9 @@
       (if (eq hand :1hor2h)
 	  (gk:draw-text (format nil "  威力   : ~a or ~a" damage (2h-damage-by-category damage category)) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font)
 	  (gk:draw-text (format nil "  威力   : ~a" damage) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font))
-      (gk:draw-text (format nil "  命中   : ~a" hit) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font)
+      (if (eq hand :1hor2h)
+	  (gk:draw-text (format nil "  命中   : ~a or ~a" hit (2h-hit-by-category hit category)) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font)
+	  (gk:draw-text (format nil "  命中   : ~a" hit) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font))
       (gk:draw-text (format nil "  必殺   : ~a％" (critical-rate critical)) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font)
       (gk:draw-text (format nil "  射程   : ~a～~a" rangemin rangemax) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font)
       (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 posx (decf posy decy)) :fill-color (gk:vec4 1 1 1 1) :font font)
@@ -141,12 +151,14 @@
       (gk:draw-text description (gk:vec2 110 posy) :fill-color (gk:vec4 0.7 1 1 1) :font *font24*))))
 
 ;;枠ありボタン bg=黒背景
-(defmethod draw-text-btn-with-waku ((btn button) thickness adjust &key (bg nil) (rounding 1))
-  (with-slots (pos string font color w h) btn
+(defmethod draw-text-btn-with-waku ((btn button) thickness adjust &key (bg nil) (rounding 1) (descri nil))
+  (with-slots (pos string font color w h description) btn
     (if (collide-p *mouse* btn)
      	(progn
           (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
-      	  (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1)))
+      	  (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+	  (when descri
+	    (gk:draw-text (button/description btn) (gk:vec2 100 20) :fill-color (gk:vec4 0 1 0 1) :font *font64*)))
 	(progn
 	  (when bg
 	    (gk:draw-rect pos w h :fill-paint (gk:vec4 0 0 0 0.6) :rounding rounding))
@@ -516,12 +528,20 @@
 	    (gk:draw-text (format nil "回避 : ~a" avoid) (gk:vec2 690 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)))))))
 
 
+;;持ち方による武器の威力
+(defun 1hor2h-damage (damage shield hand category)
+  (cond
+    ((and (eq hand :1hor2h)
+	  (null shield))
+     (2h-damage-by-category damage category))
+    (t damage)))
+
 ;;装備中のアイテムとカーソル上のアイテムの比較数値
 (defun draw-diff-item-ability (damage critical hit selected-unit)
-  (with-slots (weapon) selected-unit
+  (with-slots (weapon shield) selected-unit
     (when weapon
-      (with-slots ((w-damage damage) (w-critical critical) (w-hit hit)) weapon
-	(let ((diff-damage (- damage w-damage))
+      (with-slots ((w-damage damage) (w-critical critical) (w-hit hit) hand category) weapon
+	(let ((diff-damage (- damage (1hor2h-damage w-damage shield hand category)))
 	      (diff-cri (- (critical-rate critical) (critical-rate  w-critical)))
 	      (diff-hit (- hit w-hit)))
 	  (cond
@@ -568,29 +588,23 @@
 
 
 
-;;持ち方による武器の威力
-(defun 1hor2h-damage (damage shield hand category)
-  (cond
-    ((and (eq hand :1hor2h)
-	  (null shield))
-     (2h-damage-by-category damage category))
-    (t damage)))
+
 
 
 ;;装備中の武器情報
 (defun draw-equiped-weapon-info (weapon shield)
   (with-slots (name damage critical hit rangemin rangemax required-str hand category) weapon
     (let ((dmg (1hor2h-damage damage shield hand category)))
-    (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 390 720) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "威力 : ~a" dmg) (gk:vec2 390 690) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "命中 : ~a" hit) (gk:vec2 390 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "必殺 : ~a％" (critical-rate critical)) (gk:vec2 390 630) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "射程 : ~a～~a" rangemin rangemax) (gk:vec2 390 600) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 390 570) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text (format nil "持ち方 : ~a" (draw-weapon-holding hand shield)) (gk:vec2 390 540) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
-    (gk:draw-text "装備中の武器" (gk:vec2 430 755) :fill-color (gk:vec4 0.5 0.4 1 1) :font *font32*)
-    (gk:draw-rect (gk:vec2 380 525) 330 260 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
-    )))
+      (gk:draw-text (format nil "名前 : ~a" name) (gk:vec2 390 720) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "威力 : ~a" dmg) (gk:vec2 390 690) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "命中 : ~a" hit) (gk:vec2 390 660) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "必殺 : ~a％" (critical-rate critical)) (gk:vec2 390 630) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "射程 : ~a～~a" rangemin rangemax) (gk:vec2 390 600) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "必要筋力 : ~a" required-str) (gk:vec2 390 570) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text (format nil "持ち方 : ~a" (draw-weapon-holding hand shield)) (gk:vec2 390 540) :fill-color (gk:vec4 1 1 1 1) :font *font32*)
+      (gk:draw-text "装備中の武器" (gk:vec2 430 755) :fill-color (gk:vec4 0.5 0.4 1 1) :font *font32*)
+      (gk:draw-rect (gk:vec2 380 525) 330 260 :stroke-paint (gk:vec4 1 1 1 1) :thickness 2)
+      )))
 
 ;;選択している武器情報
 (defun draw-selected-weapon-info (weapon shield str)
@@ -626,7 +640,7 @@
 	     (gk:draw-text "装備できません" (gk:vec2 420 370) :fill-color (gk:vec4 1 0 0 1) :font *font32*))
 	    (t
 	     (draw-selected-weapon-info item shield str)
-	     (draw-diff-item-ability damage critical hit selected-unit))))))))
+	     (draw-diff-item-ability (1hor2h-damage damage shield hand category) critical hit selected-unit))))))))
 	    ;;(t
 	     ;;(gk:draw-text "装備できません" (gk:vec2 420 400) :fill-color (gk:vec4 1 1 1 1) :font *font32*))))))))
 
@@ -779,12 +793,6 @@
     (gk:draw-text (format nil "ようこそ、~aの町へ" (name selected-town))
 		  (gk:vec2 410 750) :fill-color (gk:vec4 0.5 0.3 0.7 1) :font *font64*)))
 
-;;町メニュー
-(Defun draw-town-menu ()
-  (with-slots (btn-list) *game*
-    (loop :for btn :in btn-list
-	  :do (draw-text-btn-with-waku btn 2 (gk:vec2 10 8) :rounding 8))))
-
 ;;所持金
 (defun draw-money ()
   (with-slots (money) *game*
@@ -792,6 +800,15 @@
 		  :thickness 2 :rounding 9)
     (gk:draw-text (format nil "所持金  ~dG" money) (gk:vec2 900 50)
 		  :fill-color (gk:vec4 1 0.5 0.7 1) :font *font48*)))
+
+;;町メニュー
+(Defun draw-town-menu ()
+  (with-slots (btn-list) *game*
+    (loop :for btn :in btn-list
+	  :do (draw-text-btn-with-waku btn 2 (gk:vec2 10 8) :rounding 8 :descri t))
+    (draw-money)))
+
+
 
 ;;店の補足文
 (defun draw-shop-description ()
@@ -859,3 +876,24 @@
   (draw-lvup-description)
   (draw-lvup-btn))
 ;;---------------------------------------------------------------------------------------------------------
+;;初期パーティ作成画面
+
+(defun draw-init-jon-btn ()
+  (with-slots (btn-list temp-init-party) *game*
+    (loop :for btn :in (append btn-list temp-init-party)
+	  :do (if (button/box? btn)
+		  (draw-text-btn-with-waku btn 4 (gk:vec2 8 7) :rounding 10)
+		  (draw-text-button-no-waku btn)))))
+
+(defun draw-create-init-party-supple ()
+  (gk:draw-text "初期ジョブ" (gk:vec2 160 680) :fill-color *white* :font *font64*)
+  (gk:draw-rect (gk:vec2 130 190) 320 460 :stroke-paint *white* :thickness 4 :rounding 10)
+  (gk:draw-text "初期パーティ" (gk:vec2 560 680) :fill-color *white* :font *font64*)
+  (gk:draw-text "※5人まで" (gk:vec2 860 680) :fill-color (gk:vec4 1 0 1 1) :font *font48*)
+  (gk:draw-rect (gk:vec2 530 190) 320 460 :stroke-paint *white* :thickness 4 :rounding 10)
+  )
+
+(defun draw-create-init-party ()
+  (draw-init-jon-btn)
+  (draw-create-init-party-supple))
+;;---------------------------------------------------------------------------------------------------------)

@@ -303,6 +303,41 @@
   (loop :for a :from 0 :below n
 	:collect (item-make a)))
 
+(my-enum +c_crude_weapon+ +c_dirty_hood+ +c_well_worn_hood+ +c_crude_shield+
+	 +c_copper_bag+ +c_silver_bag+ +c_gems+ +c_fragment_sword+ +c_sturdy_bone+
+	 +c_magic_bone+ +c_sullied_bone+ +c_unholy_skull+ +c_fruits_resentment_tears+
+	 +c_zombie_eyeball+ +c_old_cloak+ +c_year_old_cape+ +c_magic_stone+
+	 +c_sharp_stone+ +c_high_density_magic_stone+)
+
+(defparameter *cash-exchange-item-list*
+  (list
+   (make-instance 'cash-exchange :name "粗末な武器" :price 10)
+   (make-instance 'cash-exchange :name "汚いフード" :price 20)
+   (make-instance 'cash-exchange :name "着慣れたフード" :price 80)
+   (make-instance 'cash-exchange :name "粗雑な盾" :price 50)
+   (make-instance 'cash-exchange :name "銅貨袋" :price 30)
+   (make-instance 'cash-exchange :name "銀貨袋" :price 100)
+   (make-instance 'cash-exchange :name "宝石" :price 150)
+   (make-instance 'cash-exchange :name "剣のかけら" :price 200)
+   (make-instance 'cash-exchange :name "頑丈な骨" :price 30)
+   (make-instance 'cash-exchange :name "魔力を帯びた骨" :price 250)
+   (make-instance 'cash-exchange :name "穢れた骨" :price 50)
+   (make-instance 'cash-exchange :name "穢れた頭蓋骨" :price 300)
+   (make-instance 'cash-exchange :name "恨みの涙の結晶" :price 500)
+   (make-instance 'cash-exchange :name "ゾンビの眼球" :price 30)
+   (make-instance 'cash-exchange :name "古びた外套" :price 200)
+   (make-instance 'cash-exchange :name "年経たマント" :price 800)
+   (make-instance 'cash-exchange :name "魔力を帯びた石" :price 250)
+   (make-instance 'cash-exchange :name "鋭利な石" :price 20)
+   (make-instance 'cash-exchange :name "高密度の魔石" :price 700)
+   ))
+
+
+
+
+
+
+
 ;;ジョブ別初期武器
 (defun job-init-weapon (job)
   (case job
