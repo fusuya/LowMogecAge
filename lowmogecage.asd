@@ -2,7 +2,7 @@
   :version "0.0.1"
   :author "mogezou"
   :license ""
-  :depends-on (:trivial-gamekit)
+  :depends-on (:trivial-gamekit :cl-bodge)
   :components ((:module "src"
                 :components
                	 ((:file "package")
