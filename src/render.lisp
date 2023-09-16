@@ -21,8 +21,8 @@
 
 ;;objの範囲にカーソルがあれば□描画
 (defun draw-select-rect (obj stroke-paint fill-paint)
-  (with-slots (pos origin-w origin-h) obj
-    (gk:draw-rect pos origin-w origin-h :fill-paint fill-paint :stroke-paint stroke-paint :thickness 1.5)))
+  (with-slots (pos w h) obj
+    (gk:draw-rect pos w h :fill-paint fill-paint :stroke-paint stroke-paint :thickness 4)))
 
 
 
@@ -101,43 +101,43 @@
 
 ;;----------------------------------------------------------------------------------------------------
 ;; button
-(defmethod draw-text-button-no-waku ((btn button))
+(defmethod draw-text-button-no-waku ((btn button) adjust)
   (with-slots (pos string font color w h) btn
     (if (collide-p *mouse* btn)
      	(progn
-          (gk:draw-rect (gk:subt pos (gk:vec2 3 7)) w h :fill-paint (gk:vec4 1 1 1 1))
-      	  (gk:draw-text string pos :font font :fill-color (gk:vec4 0 0 0 1)))
-     	(gk:draw-text string pos :font font :fill-color color))))
+          (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1))
+      	  (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1)))
+     	(gk:draw-text string (gk:add pos adjust):font font :fill-color color))))
 
 ;; 装備メニュー画面のアイテムリストボタン
-(Defmethod draw-text-button-no-waku ((btn equip-item-btn))
+(Defmethod draw-text-button-no-waku ((btn equip-item-btn) adjust)
   (with-slots (selected-unit) *game*
     (with-slots (pos string font color w h equiped-unit new) btn
       (if (collide-p *mouse* btn)
      	  (progn
-	    (gk:draw-rect (gk:subt pos (gk:vec2 3 7)) w h :fill-paint (gk:vec4 1 1 1 1))
-      	    (gk:draw-text string pos :font font :fill-color (gk:vec4 0 0 0 1)))
+	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1))
+      	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1)))
 	  (if (eq (name selected-unit) equiped-unit)
-	      (gk:draw-text string pos :font font :fill-color (gk:vec4 0 0.5 1 1))
-     	      (gk:draw-text string pos :font font :fill-color color)))
+	      (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0.5 1 1))
+     	      (gk:draw-text string (gk:add pos adjust) :font font :fill-color color)))
       (cond
 	(new
-	 (gk:draw-text "N" (gk:subt pos (gk:vec2 33 -10)) :fill-color (gk:vec4 0.3 0.8 1 1) :font font)
-	 (gk:draw-text "e" (gk:subt pos (gk:vec2 24 -5)) :fill-color (gk:vec4 0.4 0.9 0.7 1) :font font)
-	 (gk:draw-text "w" (gk:subt pos (gk:vec2 15 0)) :fill-color (gk:vec4 1 0.6 1 1) :font font))
+	 (gk:draw-text "N" (gk:subt pos (gk:vec2 33 -18)) :fill-color (gk:vec4 0.3 0.8 1 1) :font font)
+	 (gk:draw-text "e" (gk:subt pos (gk:vec2 24 -13)) :fill-color (gk:vec4 0.4 0.9 0.7 1) :font font)
+	 (gk:draw-text "w" (gk:subt pos (gk:vec2 15 -8)) :fill-color (gk:vec4 1 0.6 1 1) :font font))
 	(equiped-unit
-	 (gk:draw-text "E" (gk:subt pos (gk:vec2 20)) :fill-color (gk:vec4 1 0 1 1) :font font))))))
+	 (gk:draw-text "E" (gk:subt pos (gk:vec2 20 -8)) :fill-color (gk:vec4 1 0 1 1) :font font))))))
 
 ;;店アイテムボタン
-(defmethod draw-text-button-no-waku ((btn sale-item-btn))
+(defmethod draw-text-button-no-waku ((btn sale-item-btn) adjust)
   (with-slots (selected-unit) *game*
     (with-slots (pos string font color w h new price item) btn
       (if (collide-p *mouse* btn)
      	  (progn
-	    (gk:draw-rect (gk:subt pos (gk:vec2 3 7)) w h :fill-paint (gk:vec4 1 1 1 1))
-      	    (gk:draw-text string pos :font font :fill-color (gk:vec4 0 0 0 1))
+	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1))
+      	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
 	    (draw-sale-item-info-with-cursor item))
-     	  (gk:draw-text string pos :font font :fill-color color))
+     	  (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))
       (gk:draw-text (format nil "~4d G" price) (gk:add pos (gk:vec2 360 0)) :fill-color (gk:vec4 1 1 1 1)
 		    :font font))))
 
@@ -146,9 +146,9 @@
 (defun draw-btn-description (btn)
   (with-slots (description pos) btn
     (let ((posy (if (< (gk:y pos) 300) 520 15)))
-      (gk:draw-rect (gk:vec2 100 (- posy 8)) 500 30 :fill-paint (gk:vec4 0 0 0.3 0.6) :thickness 2
+      (gk:draw-rect (gk:vec2 100 (- posy 10)) 650 35 :fill-paint (gk:vec4 0 0 0.3 0.6) :thickness 2
 						    :stroke-paint (gk:vec4 1 1 1 0.7) :rounding 3)
-      (gk:draw-text description (gk:vec2 110 posy) :fill-color (gk:vec4 0.7 1 1 1) :font *font24*))))
+      (gk:draw-text description (gk:vec2 110 posy) :fill-color (gk:vec4 0.7 1 1 1) :font *font32*))))
 
 ;;枠ありボタン bg=黒背景
 (defmethod draw-text-btn-with-waku ((btn button) thickness adjust &key (bg nil) (rounding 1) (descri nil))
@@ -233,43 +233,29 @@
   (with-slots (pos img-id origin-w origin-h origin) obj
     (gk:draw-image pos img-id :origin origin :width origin-w :height origin-h)))
 
+;;battle画面の基本オブジェクト
+(defun draw-obj-img-in-battle (obj)
+  (with-slots (pos img-id translate-x translate-y) obj
+    (bg:draw-image pos *battle-obj-w* *battle-obj-h* (gk::resource-by-id img-id)
+		   :scale-x *scale-obj-w* :scale-y *scale-obj-h*
+		   :translate-x translate-x :translate-y translate-y)))
 
-;;TODO
-(defun draw-cell-info (cell)
-  (with-slots (name def heal avoid) cell
-    (with-slots (x) *mouse*
-      (let* ((rect-b-w 90)
-	     (rect-b-h 110)
-	     (rect-margin 5)
-	     (rect-b-pos (if (>= *window-center* x)
-			     (gk:vec2 (- (/ *window-w* 1.5) rect-b-w rect-margin) rect-margin)
-			     (gk:vec2 rect-margin rect-margin)))
-	     (text-x (if (>= *window-center* x)
-			 (+ (- (/ *window-w* 1.5) rect-b-w) 6)
-			 15))
-	     (name-len (length name))
-	     (name-text-x (cond ((= name-len 1) (+ text-x 25))
-				((= name-len 2) (+ text-x 15)))))
-	(gk:draw-rect rect-b-pos rect-b-w rect-b-h :fill-paint (gk:vec4 0 0 0 1)
-						   :stroke-paint (gk:vec4 1 1 1 1) :thickness 5)
-	(gk:draw-text (format nil "~a" name)  (gk:vec2 name-text-x 90) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "防御:~a%" def)   (gk:vec2 text-x 65) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "回避:~a%" avoid) (gk:vec2 text-x 40) :font *font24* :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "回復:~a%" heal)  (gk:vec2 text-x 15) :font *font24* :fill-color (gk:vec4 1 1 1 1))))))
+
+
 
 ;;移動範囲表示
 (defun draw-movearea ()
   (with-slots (selected-unit) *game*
     (when selected-unit
       (let ((stroke-paint (if (eq (team selected-unit) :player)
-			      (gk:vec4 0 0 0.7 1)
-			      (gk:vec4 0.7 0 0 1)))
+			      (gk:vec4 0 0 0.7 0.6)
+			      (gk:vec4 0.7 0 0 0.6)))
 	    (fill-paint (if (eq (team selected-unit) :player)
-			    (gk:vec4 0 0 0.7 0.6)
-			    (gk:vec4 0.7 0 0 0.6))))
+			    (gk:vec4 0 0 0.7 0.4)
+			    (gk:vec4 0.7 0 0 0.4))))
 	(loop :for xy :in (movearea selected-unit)
-	      :do (let* ((w 32)
-			 (h 32)
+	      :do (let* ((w *battle-obj-w*)
+			 (h *battle-obj-h*)
 			 (pos (gk:vec2 (* (car xy) w) (* (cadr xy) h))))
 		    (gk:draw-rect pos w h :stroke-paint stroke-paint :fill-paint fill-paint)))))))
 
@@ -282,36 +268,40 @@
 	  (let ((stroke-paint (gk:vec4 0.7 0 0.7 1))
 		(fill-paint (gk:vec4 0.8 0.2 0.8 0.6)))
 	    (loop :for xy :in range
-		  :do (let* ((w 32)
-			     (h 32)
+		  :do (let* ((w *battle-obj-w*)
+			     (h *battle-obj-h*)
 			     (pos (gk:vec2 (* (car xy) w) (* (cadr xy) h))))
 			(gk:draw-rect pos w h :stroke-paint stroke-paint :fill-paint fill-paint)))
 	    (loop :for xy :in scope
-		  :do (let* ((w 32)
-			     (h 32)
+		  :do (let* ((w *battle-obj-w*)
+			     (h *battle-obj-h*)
 			     (pos (gk:vec2 (* (car xy) w) (* (cadr xy) h))))
 			(gk:draw-rect pos w h :stroke-paint (gk:vec4 1 0.7 0 0.6) :fill-paint (gk:vec4 1 0.7 0 0.7))))
 	    ))))))
 
 ;;TODO 表示する順番 情報は地形やモンスターの上に表示されるようにしたい
 (defun draw-battle-field ()
-  (with-slots (selected-skill) *game*
+  (with-slots (selected-skill action-state) *game*
     (with-slots (field player-init-pos p-sight-coord) *battle-field*
       (let ((select-cell nil))
 	(loop :for cell :in field
 	      :do (with-slots (x y pos w h)  cell
 		    (when (find (list x y) p-sight-coord :test #'equal)
-		      (draw-obj-img cell)
+		      (draw-obj-img-in-battle cell)
 		      (when (collide-p *mouse* cell)
 			(setf select-cell cell))
 		      )))
-	(when select-cell
+	(when (and select-cell
+		   (or (eq action-state :player-turn)
+		       (eq action-state :skill-mode)
+		       (eq action-state :attack-mode)
+		       (eq action-state :move-mode)))
 	  ;;(with-slots (x y) select-cell
-	    ;;(if (and selected-skill ;;スキルエリア
-	;;	     (find (list x y) (area selected-skill) :test #'equal))
-	;;	(draw-select-rect select-cell (gk:vec4 0 1 1 1) (gk:vec4 1 0 1 0.7))
-		(draw-select-rect select-cell (gk:vec4 1 1 1 1) (gk:vec4 0 0 0 0))
-	    (draw-cell-info select-cell))))))
+	  ;;(if (and selected-skill ;;スキルエリア
+	  ;;	     (find (list x y) (area selected-skill) :test #'equal))
+	  ;;	(draw-select-rect select-cell (gk:vec4 0 1 1 1) (gk:vec4 1 0 1 0.7))
+	  (draw-select-rect select-cell (gk:vec4 1 1 1 1) (gk:vec4 0 0 0 0))
+	  )))))
 
 ;;-----------------------------------------------------------------------------------
 ;;未行動可行動済みか文字列ゲット
@@ -330,9 +320,9 @@
 ;;ユニット情報
 (defmethod draw-unit-data ((e unit) rect-pos-y text-x)
   (with-slots (hp maxhp str agi vit res int name state dex mp maxmp avoid-value level) e
-      (let* ((font *font20*)
+      (let* ((font *font32*)
 	     (bottom-y (+ rect-pos-y 10))
-	     (line-width 16))
+	     (line-width 25))
 	(multiple-value-bind (act-str act-color) (get-unit-state-string e)
 	  (gk:draw-text (format nil "~a" act-str) (gk:vec2 text-x bottom-y) :font font :fill-color act-color))
 	(gk:draw-text (format nil "精神力: ~a" res) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
@@ -341,29 +331,29 @@
 	(gk:draw-text (format nil "敏捷度: ~a" agi)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
 	(gk:draw-text (format nil "生命力: ~a" vit) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
 	(gk:draw-text (format nil " 筋力 : ~a" str)   (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "  MP  :~a/~a" mp maxmp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "  HP  :~a/~a" hp maxhp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "名前 :~a" name)  (gk:vec2 text-x (incf bottom-y 17)) :font *font18* :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "  MP  : ~a/~a" mp maxmp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "  HP  : ~a/~a" hp maxhp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "名前 :~a" name)  (gk:vec2 text-x (incf bottom-y 24)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
 	)))
 
 ;;モンスターのユニットデータ
 (defmethod draw-unit-data ((e monster) rect-pos-y text-x)
   (with-slots (hp maxhp hit-value avoid-value vit-bonus res-bonus name state def mp maxmp atk-point) e
     (with-slots (x) *mouse*
-      (let* ((font *font20*)
+      (let* ((font *font32*)
 	     (bottom-y (+ rect-pos-y 10))
-	     (line-width 16))
+	     (line-width 25))
 	(multiple-value-bind (act-str act-color) (get-unit-state-string e)
 	  (gk:draw-text (format nil "~a" act-str) (gk:vec2 text-x bottom-y) :font font :fill-color act-color))
-	(gk:draw-text (format nil " 防護点 : ~a" def) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil " 回避力 : ~a" avoid-value) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil " 命中力 : ~a" hit-value)   (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "精神抵抗: ~a" res-bonus)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "生命抵抗: ~a" vit-bonus)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil " 打撃点 : ~a" atk-point) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "   MP   : ~a/~a" mp maxmp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "   HP   : ~a/~a" hp maxhp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
-	(gk:draw-text (format nil "名前 :~a" name)  (gk:vec2 text-x (incf bottom-y 17)) :font *font18* :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 防護点 : ~2d" def) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 回避力 : ~2d" avoid-value) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 命中力 : ~2d" hit-value)   (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "精神抵抗: ~2d" res-bonus)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "生命抵抗: ~2d" vit-bonus)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil " 打撃点 : ~2d" atk-point) (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "   MP   : ~2d" mp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "   HP   : ~2d" hp)  (gk:vec2 text-x (incf bottom-y line-width)) :font font :fill-color (gk:vec4 1 1 1 1))
+	(gk:draw-text (format nil "名前 :~a" name)  (gk:vec2 text-x (incf bottom-y 24)) :font *font24* :fill-color (gk:vec4 1 1 1 1))
 	))))
 
 
@@ -371,20 +361,20 @@
 (defun draw-unit-info-box (rect-h rect-pos-y rect-margin rect-w name)
   (with-slots (x) *mouse*
     (let* ((rect-pos (if (>= *window-center* x)
-			 (gk:vec2 (- (/ *window-w* 1.5) rect-w rect-margin) rect-pos-y)
+			 (gk:vec2 (- *window-w* rect-w rect-margin) rect-pos-y)
 			 (gk:vec2 rect-margin rect-pos-y))))
       (gk:draw-rect rect-pos rect-w rect-h :fill-paint (gk:vec4 0 0 0 1)
-					   :stroke-paint (gk:vec4 1 1 1 1) :thickness 3))))
+					   :stroke-paint (gk:vec4 1 1 1 1) :thickness 3 :rounding 10))))
 
 ;;ユニット情報表示
 (defun draw-unit-info (unit)
   (with-slots (x) *mouse*
-    (let* ((rect-h 172)
+    (let* ((rect-h 255)
 	   (rect-margin 5)
-	   (rect-pos-y (- (/ *window-h* 1.5) rect-h rect-margin))
-	   (rect-w (max 135 (* (length (name unit)) 26)))
+	   (rect-pos-y (- *window-h* rect-h rect-margin))
+	   (rect-w (max 160 (* (length (name unit)) 29)))
 	   (text-x (if (>= *window-center* x)
-		       (+ (- (/ *window-w* 1.5) rect-w) 1)
+		       (+ (- *window-w* rect-w) 1)
 		       10)))
       (draw-unit-info-box rect-h rect-pos-y rect-margin rect-w (name unit))
       (draw-unit-data unit rect-pos-y text-x))))
@@ -399,7 +389,7 @@
 		:do (with-slots (pos w h atked-pos) e
 		      (when atked-pos
 			(gk:draw-rect pos w h :fill-paint (gk:vec4 0.7 0 0 0.7)))
-		      (draw-obj-img e)
+		      (draw-obj-img-in-battle e)
 		      (when (collide-p *mouse* e)
 			(setf select-monster e))))
 	  (when select-monster
@@ -411,14 +401,16 @@
 (defun draw-battle-start-text ()
   (with-slots (flash-flag) *game*
     (when flash-flag
-      (gk:draw-text (format nil "戦闘開始") (gk:vec2 380 300) :fill-color (gk:vec4 1 0 1 1) :font *font64*)
-      (gk:draw-text (format nil "spaceキー") (gk:vec2 380 250) :fill-color (gk:vec4 1 0 1 1) :font *font64*))))
+      (gk:draw-text (format nil "初期位置を決めてください") (gk:vec2 400 470) :fill-color (gk:vec4 0 1 1 1) :font *font64*)
+      (gk:draw-text (format nil "戦闘開始") (gk:vec2 548 400) :fill-color (gk:vec4 1 0 1 1) :font *font64*)
+      (gk:draw-text (format nil "spaceキー") (gk:vec2 548 350) :fill-color (gk:vec4 1 0 1 1) :font *font64*))))
 
+;;バトル開始時の初期位置範囲
 (defun draw-battle-init-pos ()
   (with-slots (player-init-pos) *battle-field*
     (loop :for cell :in player-init-pos
 	  :do (with-slots (pos) cell
-		(gk:draw-rect pos 32 32 :fill-paint (gk:vec4 0 0 0.7 0.3)
+		(gk:draw-rect pos *battle-obj-w* *battle-obj-h* :fill-paint (gk:vec4 0 0 0.7 0.3)
 					:stroke-paint (gk:vec4 0 0 1 1))))))
 
 ;;プレイヤーユニット表示
@@ -429,22 +421,31 @@
 	    :do (with-slots (pos origin origin-w origin-h img-id atked-pos w h) p
 		  (when atked-pos
 		    (gk:draw-rect pos 32 32 :fill-paint (gk:vec4 0.9 0.9 0.0 0.9)))
-		  (gk:draw-image pos img-id :origin origin :width origin-w :height origin-h)
+		  (draw-obj-img-in-battle p)
 		  (when (collide-p *mouse* p)
 		    (draw-select-rect p (gk:vec4 1 1 1 1) (gk:vec4 0 0 0 0))
 		    (setf on-cursor p))))
       (when on-cursor
 	(draw-unit-info on-cursor)))))
 
+
+;;選択したユニットに四角つける
+(defun draw-selected-unit-rect ()
+  (with-slots (selected-unit) *game*
+    (when selected-unit
+      (with-slots (pos) selected-unit
+	(gk:draw-rect pos *battle-obj-w* *battle-obj-h* :stroke-paint *white* :thickness 3)))))
 ;;-----------------------------------------------------------------------------------
 ;; skill
 (defun draw-skill-anime ()
   (with-slots (selected-skill) *game*
-    (with-slots (pos scope origin img) selected-skill
+    (with-slots (pos scope translate-x translate-y img) selected-skill
       (loop :for xy :in scope
-	    :do (let ((posx (* (car xy) 32))
-		      (posy (* (cadr xy) 32)))
-		  (gk:draw-image (gk:vec2 posx posy) img :origin origin :width 32 :height 32))))))
+	    :do (let ((posx (* (car xy) *battle-obj-w*))
+		      (posy (* (cadr xy) *battle-obj-h*)))
+		  (bg:draw-image (gk:vec2 posx posy) *battle-obj-w* *battle-obj-h*
+				 (gk::resource-by-id img) :scale-x *scale-obj-w* :scale-y *scale-obj-h*
+				 :translate-x translate-x :translate-y translate-y))))))
 
 ;;-----------------------------------------------------------------------------------
 
@@ -457,16 +458,19 @@
 
 
 (defun draw-title ()
+  (with-slots (btn-list) *game*
   (gk:draw-rect (gk:vec2 0 0) *scale-window-w* *scale-window-h* :fill-paint (gk:vec4 0 0 0 1))
-  ;;(gk:draw-line  (gk:vec2 640 0) (gk:vec2 640 720) (gk:vec4 1 1 1 1))
-  ;;(gk:draw-rect (gk:vec2 550 200) 45 38 :stroke-paint (gk:vec4 1 1 1 1))
-  (gk:draw-text "Low Mogec Age" (gk:vec2 40 520) :font *font256* :fill-color (gk:vec4 1 0.5 0.5 1)))
+  ;; (bg:draw-image (gk:vec2 320 320) 48 48 (gk::resource-by-id :monster-img) :scale-x 1.5 :scale-y 1.5
+  ;; 		 :translate-y -48)
+  (gk:draw-text "Low Mogec Age" (gk:vec2 40 520) :font *font256* :fill-color (gk:vec4 1 0.5 0.5 1))
+    (loop :for btn :in btn-list
+	  :do (draw-text-button-no-waku btn (gk:vec2 4 8)))))
 
 
 ;;バトルモード
 (defun draw-battle ()
   (with-slots (action-state) *game*
-    (gk:scale-canvas *scale-obj-w* *scale-obj-h*)
+    ;;(gk:scale-canvas *scale-obj-w* *scale-obj-h*)
     (draw-battle-field )
     (draw-movearea)
     (when (eq action-state :skill-mode)
@@ -480,12 +484,13 @@
 
 
 (defun draw-battle-ready ()
-  (gk:scale-canvas *scale-obj-w* *scale-obj-h*)
+  ;;(gk:scale-canvas *scale-obj-w* *scale-obj-h*)
   (draw-battle-field)
-  (draw-battle-field-border)
-  (Draw-movearea)
+  ;;(draw-battle-field-border)
+  ;;(Draw-movearea)
   (draw-battle-init-pos)
   (draw-party-chara)
+  (draw-selected-unit-rect)
   (draw-enemies)
   (draw-battle-start-text))
 
@@ -728,7 +733,7 @@
 	  :do (with-slots (box?) btn
 		(if box?
 		    (draw-text-btn-with-waku btn 2 (gk:vec2 3 4))
-		    (draw-text-button-no-waku btn))
+		    (draw-text-button-no-waku btn (gk:vec2 3 8)))
 		(when (and  (collide-p *mouse* btn)
 			    (eq 'equip-item-btn (type-of btn)))
 		  (draw-item-info-with-cursor (item btn)))))))
@@ -826,8 +831,8 @@
 (defun draw-shop-item ()
   (with-slots (btn-list) *game*
     (loop :for btn :in btn-list
-	  :do (draw-text-button-no-waku btn))
-    (gk:draw-rect (gk:vec2 150 100) 480 620 :stroke-paint (gk:vec4 1 1 1 1) :thickness 3 :rounding 8)
+	  :do (draw-text-button-no-waku btn (gk:vec2 3 7)))
+    (gk:draw-rect (gk:vec2 150 105) 480 620 :stroke-paint (gk:vec4 1 1 1 1) :thickness 3 :rounding 8)
     (draw-shop-description)))
 
 (defun draw-town ()
@@ -878,22 +883,22 @@
 ;;---------------------------------------------------------------------------------------------------------
 ;;初期パーティ作成画面
 
-(defun draw-init-jon-btn ()
+(defun draw-init-job-btn ()
   (with-slots (btn-list temp-init-party) *game*
     (loop :for btn :in (append btn-list temp-init-party)
 	  :do (if (button/box? btn)
 		  (draw-text-btn-with-waku btn 4 (gk:vec2 8 7) :rounding 10)
-		  (draw-text-button-no-waku btn)))))
+		  (draw-text-button-no-waku btn (gk:vec2 10 8))))))
 
 (defun draw-create-init-party-supple ()
   (gk:draw-text "初期ジョブ" (gk:vec2 160 680) :fill-color *white* :font *font64*)
-  (gk:draw-rect (gk:vec2 130 190) 320 460 :stroke-paint *white* :thickness 4 :rounding 10)
+  (gk:draw-rect (gk:vec2 130 200) 320 460 :stroke-paint *white* :thickness 4 :rounding 10)
   (gk:draw-text "初期パーティ" (gk:vec2 560 680) :fill-color *white* :font *font64*)
   (gk:draw-text "※5人まで" (gk:vec2 860 680) :fill-color (gk:vec4 1 0 1 1) :font *font48*)
-  (gk:draw-rect (gk:vec2 530 190) 320 460 :stroke-paint *white* :thickness 4 :rounding 10)
+  (gk:draw-rect (gk:vec2 530 200) 320 460 :stroke-paint *white* :thickness 4 :rounding 10)
   )
 
 (defun draw-create-init-party ()
-  (draw-init-jon-btn)
+  (draw-init-job-btn)
   (draw-create-init-party-supple))
 ;;---------------------------------------------------------------------------------------------------------)

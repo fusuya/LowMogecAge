@@ -1,13 +1,13 @@
 (in-package :lowmogecage)
 
 (defun bind-mouse-event ()
-  (with-slots ((mouse-x x) (mouse-y y) left right x-for-obj y-for-obj) *mouse*
+  (with-slots ((mouse-x x) (mouse-y y) left right) *mouse*
     (gamekit:bind-cursor (lambda (x y)
 			   "Save cursor position"
 			   (setf mouse-x (/ x *scale-w*)
-				 mouse-y (/ y *scale-h*)
-				 x-for-obj (/ mouse-x *scale-obj-w*)
-				 y-for-obj (/ mouse-y *scale-obj-h*))))
+				 mouse-y (/ y *scale-h*))))
+				 ;;x-for-obj (/ mouse-x *scale-obj-w*)
+				 ;;y-for-obj (/ mouse-y *scale-obj-h*))))
     (gk:bind-button :mouse-left :pressed
 		    (lambda ()
                       ;;(print "nnggngn")

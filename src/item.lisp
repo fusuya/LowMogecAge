@@ -267,11 +267,15 @@
    (make-instance 'shielddesc :category :shield :name "グレートパリィ" :required-str 30 :price 3300 :def 3 :avoid 1 :hand :2h)
    ;;使用アイテム
    (make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0 :price 100
-				  :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				  :element :holy :power 20 :depend :int :img :skill-img
+				  :origin (gk:vec2 0 (* +heal+ 32)) :sound :heal
+				  :translate-y (- (* +heal+ *battle-obj-h*))
 				  :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
 				  :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
    (make-instance 'magic-perfume :name "魔香水" :target :ally :r 0 :mp 0 :rangemin 1 :rangemax 1 :price 600
-				 :element :holy :power 0 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+				 :element :holy :power 0 :depend :int :img :skill-img
+				 :origin (gk:vec2 0 (* +heal+ 32)) :sound :heal
+				 :translate-y (- (* +heal+ *battle-obj-h*))
 				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
 				 :dmg-table (nth 0 *default-damage-table-list*) :tag :magic-perfume)
    ))

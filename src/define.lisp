@@ -161,6 +161,9 @@
 (defparameter *obj-w* (* *scale-obj-w* *origin-obj-w*))
 (defparameter *obj-h* (* *scale-obj-h* *origin-obj-h*))
 
+(defparameter *battle-obj-w* (* *scale-obj-w* *origin-obj-w*))
+(defparameter *battle-obj-h* (* *scale-obj-h* *origin-obj-h*))
+
 
 ;;プレイヤーのサイズ
 (defparameter *p-w* 24)
@@ -411,6 +414,8 @@
    (origin-w        :accessor origin-w        :initform 32      :initarg :origin-w)
    (origin-h        :accessor origin-h        :initform 32      :initarg :origin-h)
    (pos      :accessor pos      :initform 0      :initarg :pos)
+   (translate-x      :accessor translate-x      :initform 0      :initarg :translate-x)
+   (translate-y      :accessor translate-y      :initform 0      :initarg :translate-y)
    (origin   :accessor origin      :initform 0      :initarg :origin)
    (img-id   :accessor img-id      :initform nil    :initarg :img-id)))
 
@@ -698,7 +703,7 @@
 
 (defmethod initialize-instance :after ((e p-fighter) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "戦士"
 	  tec 7 con 10 mnd 4
 	  team :player
@@ -707,6 +712,7 @@
 	  move 4
 	  movecost  #(1 -1 -1 2 2 3 3 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-warrior+))
+	  translate-y (- (* *battle-obj-h* +img-p-warrior+))
 	  id :fighter)
     (unit-random-status e)
     (unit-status-adjust e)
@@ -717,7 +723,7 @@
 
 (defmethod initialize-instance :after ((e p-sorcerer) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "魔術師"
 	  tec 7 con 4 mnd 10
 	  move 3
@@ -726,6 +732,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost  #(1 -1 -1 2 2 -1 3 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-sorcerer+))
+	  translate-y (- (* *battle-obj-h* +img-p-sorcerer+))
 	  id :sorcerer)
     (unit-random-status e)
     (unit-status-adjust e)
@@ -737,7 +744,7 @@
 
 (defmethod initialize-instance :after ((e p-priest) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "僧侶"
 	  tec 4 con 8 mnd 9
 	  move 3
@@ -746,6 +753,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost  #(1 -1 -1 2 2 3 3 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-priest+))
+	  translate-y (- (* *battle-obj-h* +img-p-priest+))
 	  id :priest)
     (unit-random-status e)
     (unit-status-adjust e)))
@@ -755,7 +763,7 @@
 
 (defmethod initialize-instance :after ((e p-ranger) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "射手"
 	  tec 8 con 4 mnd 9
 	  move 3
@@ -764,6 +772,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost  #(1 -1 -1 2 2 3 3 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-archer+))
+	  translate-y (- (* *battle-obj-h* +img-p-archer+))
 	  id :ranger)
     (unit-random-status e)
     (unit-status-adjust e)))
@@ -773,7 +782,7 @@
 
 (defmethod initialize-instance :after ((e p-s-knight) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "騎士"
 	  tec 8 con 9 mnd 5
 	  move 5
@@ -782,6 +791,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost   #(1 -1 -1 2 2 3 2 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-s-knight+))
+	  translate-y (- (* *battle-obj-h* +img-p-s-knight+))
 	  id :s-knight)
     (unit-random-status e)
     (unit-status-adjust e)))
@@ -791,7 +801,7 @@
 
 (defmethod initialize-instance :after ((e p-p-knight) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "天馬騎士"
 	  tec (dice 2 6) con (dice 2 6) mnd (dice 2 6)
 	  move 5
@@ -800,6 +810,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost   #(1 -1 -1 1 1 1 1 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-p-knight+))
+	  translate-y (- (* *battle-obj-h* +img-p-p-knight+))
 	  id :p-knight)
     (unit-random-status e)
     (unit-status-adjust e)))
@@ -809,9 +820,7 @@
 
 (defmethod initialize-instance :after ((e p-scout) &rest initargs)
   (declare (ignore initargs))
-  (with-slots (job-name movecost lvuprate canequip id origin move weapon team armor level
-	       hp mp str vit con dex tec mnd int res agi str-bonus agi-bonus int-bonus res-bonus vit-bonus dex-bonus
-	       hit-value avoid-value maxhp maxmp) e
+  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
     (setf job-name "盗賊"
 	  tec 10 con 7 mnd 4
 	  move 4
@@ -820,6 +829,7 @@
 	  armor (item-make +a_cloth_armor+)
 	  movecost   #(1 -1 -1 2 2 2 2 1 1)
 	  origin (gk:vec2 0 (* 32 +img-p-thief+))
+	  translate-y (- (* *battle-obj-h* +img-p-thief+))
 	  id :scout)
     (unit-random-status e)
     (unit-status-adjust e)))
@@ -1124,6 +1134,8 @@
    (status   :accessor status  :initform 0   :initarg :status)
    (depend   :accessor depend  :initform 0   :initarg :depend)
    (origin   :accessor origin  :initform 0   :initarg :origin)
+   (translate-x   :accessor translate-x  :initform 0   :initarg :translate-x)
+   (translate-y   :accessor translate-y  :initform 0   :initarg :translate-y)
    (pos   :accessor pos  :initform 0   :initarg :pos)
    (img   :accessor img  :initform 0   :initarg :img)
    (frame   :accessor frame  :initform 0   :initarg :frame)
@@ -1131,15 +1143,8 @@
    (interval   :accessor interval  :initform 0   :initarg :interval)
    (team   :accessor team  :initform 0   :initarg :team)
    (tag   :accessor tag  :initform 0   :initarg :tag)
+   (sound   :accessor sound  :initform 0   :initarg :sound)
    ))
-
-
-(defclass use-item (skill itemdesc)
-  ())
-(defclass healing-potion (use-item)
-  ())
-(defclass magic-perfume (use-item)
-  ())
 
 (defclass first-aid (skill)
   ())
@@ -1148,29 +1153,43 @@
 (defclass fire (skill)
   ())
 
+(defclass use-item (skill itemdesc)
+  ())
+(defclass healing-potion (use-item)
+  ())
+(defclass magic-perfume (use-item)
+  ())
+
+
+
 (defparameter *skill-and-item-list*
   `(:heal ,(make-instance 'heal :name "ヒール" :target :ally :r 0 :mp 3 :rangemin 1 :rangemax 5
-				 :element :holy :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
-				 :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99
-				 :dmg-table (nth 10 *default-damage-table-list*))
+				:element :holy :power 10 :depend :int :img :skill-img
+				:origin (gk:vec2 0 (* +heal+ 32)) :sound :heal
+				:translate-y (- (* +heal+ *battle-obj-h*))
+				:max-frame 100 :interval 20 :atking-type :magic-heal :critical 99
+				:dmg-table (nth 10 *default-damage-table-list*))
     :fire ,(make-instance 'fire :name "ファイア" :target :enemy :r 1 :mp 3 :rangemin 1 :rangemax 5
-				 :element :fire :power 10 :depend :int :img :skill-img :origin (gk:vec2 0 (* +fire+ 32))
-				 :max-frame 120 :interval 20 :atking-type :magic-atk
-				 :critical 10 :dmg-table (nth 10 *default-damage-table-list*))
+				:element :fire :power 10 :depend :int :img :skill-img
+				:origin (gk:vec2 0 (* +fire+ 32)) :sound :fire
+				:translate-y (- (* +fire+ *battle-obj-h*))
+				:max-frame 120 :interval 20 :atking-type :magic-atk
+				:critical 10 :dmg-table (nth 10 *default-damage-table-list*))
     :first-aid ,(make-instance 'first-aid :name "応急手当" :target :ally :r 0 :mp 0 :rangemin 1 :rangemax 1
 					  :depend :int :img :skill-img :atking-type :magic
-					  :origin (gk:vec2 0 (* +heal+ 32))
+					  :origin (gk:vec2 0 (* +heal+ 32)) :sound :heal
+					  :translate-y (- (* +heal+ *battle-obj-h*))
 					  :max-frame 120 :interval 20)
     :healing-potion ,(make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0
-				 :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+						    :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
 						    :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
 						    :price 100
 						    :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
     :magic-perfume ,(make-instance 'magic-perfume :name "魔香水" :target :ally :r 0 :mp 0 :rangemin 1 :rangemax 1
-				 :element :holy :power 0 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
+						  :element :holy :power 0 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
 						  :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
 						  :price 600
-						    :dmg-table (nth 0 *default-damage-table-list*) :tag :magic-perfume)
+						  :dmg-table (nth 0 *default-damage-table-list*) :tag :magic-perfume)
     ))
 
 ;;使用アイテムのデータをゲット

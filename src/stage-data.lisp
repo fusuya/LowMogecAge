@@ -107,7 +107,7 @@
 (defun create-enemy (cell e-type)
   (make-instance e-type :pos (math:copy-vec2 (pos cell)) :name (nth (random (length *name-list*)) *name-list*)
 			:x (x cell) :y (y cell)
-			:w *origin-obj-w* :h *origin-obj-h*
+			:w *battle-obj-w* :h *battle-obj-h*
 			:team :enemy :sight (+ 3 (random 3))))
 
 (defun get-battle-init-pos-dir ()
@@ -290,16 +290,17 @@
 			  :do
 			     (let* ((new-field-type (get-new-field-type y x field-type-data))
 				    (cell (weightpick new-field-type))
-				    (cell-w (* *origin-obj-w* 1))
-				    (cell-h (* *origin-obj-h* 1))
+				    (cell-w (* *battle-obj-w* 1))
+				    (cell-h (* *battle-obj-h* 1))
 				    (origin (gk:vec2 (* cell *origin-obj-w*) 0))
-				    (posx (* x *origin-obj-w*))
-				    (posy (* y *origin-obj-h*)))
+				    (posx (* x *battle-obj-w*))
+				    (posy (* y *battle-obj-h*)))
 			       (multiple-value-bind (name heal def avoid) (Get-cell-data cell)
 				 (let ((cell-data (make-instance 'cell :name name :heal heal :def def :avoid avoid
 								       :cell-num cell
 								       :w cell-w :h cell-h :img-id :obj-img
 								       :x x :y y :origin origin
+								       :translate-x (- (* cell *battle-obj-w*))
 								       ;; :posx posx :posy posy 
 								       ;; :posx2 (+ posx cell-w) :posy2 (+ posy cell-h)
 								       :pos (gk:vec2 posx posy))))
