@@ -41,7 +41,7 @@
 	 +w_fast_spike+  +w_flissa+ +w_schiavona+
 	 +w_defender+ +w_talwar+ +w_steal_blade+ +w_flamberge+ +w_dragon_slayer+))
 
-(defparameter *spear-list* 
+(defparameter *spear-list*
   (list +w_javelin+ +w_short_spear+ +w_spear+ +w_long_spear+ +w_pillar+
 	 +w_trident+  +w_Ahlspiess+ +w_pike+))
 

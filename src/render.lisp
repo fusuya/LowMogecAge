@@ -835,12 +835,105 @@
     (gk:draw-rect (gk:vec2 150 105) 480 620 :stroke-paint (gk:vec4 1 1 1 1) :thickness 3 :rounding 8)
     (draw-shop-description)))
 
+
+;;ステータス表示
+(defun draw-unit-status (unit status-posx status-posy bonus-posx bonus-posy job-posx job-posy skill-posx skill-posy line-width font)
+  (with-slots (hp maxhp mp maxmp str dex agi vit res int dex-bonus vit-bonus res-bonus
+	       int-bonus str-bonus agi-bonus magic-power job-level-list name
+	       passive-skill action-skill declare-skill race move) unit
+    (gk:draw-text (format nil " 名前  : ~a" name) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "  HP   : ~d / ~d" hp maxhp) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "  MP   : ~d / ~d" mp maxmp) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil " 筋力  : ~2d" str) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "器用度 : ~2d" dex) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "敏捷度 : ~2d" agi) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "生命力 : ~2d" vit) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "精神力 : ~2d" res) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil " 知力  : ~2d" int) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "移動力 : ~2d" move) (gk:vec2 status-posx (decf status-posy line-width))
+		  :fill-color *white* :font font)
+    ;;種族
+    (gk:draw-text "種族" (gk:vec2 bonus-posx (+ bonus-posy 100))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "~a" race) (gk:vec2 bonus-posx (+ bonus-posy 55))
+		  :fill-color *white* :font font)
+    ;;ボーナス
+    (gk:draw-text (format nil " 筋力ボーナス : ~d" str-bonus) (gk:vec2 bonus-posx (Decf bonus-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "器用度ボーナス: ~d" dex-bonus) (gk:vec2 bonus-posx (Decf bonus-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "敏捷度ボーナス: ~d" agi-bonus) (gk:vec2 bonus-posx (Decf bonus-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "生命力ボーナス: ~d" vit-bonus) (gk:vec2 bonus-posx (Decf bonus-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil "精神力ボーナス: ~d" res-bonus) (gk:vec2 bonus-posx (Decf bonus-posy line-width))
+		  :fill-color *white* :font font)
+    (gk:draw-text (format nil " 知力ボーナス : ~d" int-bonus) (gk:vec2 bonus-posx (Decf bonus-posy line-width))
+		  :fill-color *white* :font font)
+    ;;技能
+    (loop :for job :in *all-job-list*
+	  :for posx = job-posx
+	  :for posy :from job-posy :downto 0 :by line-width
+	  :do (let* ((job-data (getf *all-job-tag-and-data-list* job))
+		     (name (getf job-data :name))
+		     (level (getf job-level-list job)))
+		(gk:draw-text (format nil "~a" name) (gk:vec2 posx posy)
+			      :fill-color *white* :font font)
+		(gk:draw-text (format nil "Lv ~d" level) (gk:vec2 (+ posx 220) posy)
+			      :fill-color *white* :font font)))
+    ;;特技
+    (gk:draw-text "初期特技" (gk:vec2 skill-posx skill-posy) :fill-color *white* :font font)
+    (loop :for skill-tag :in (append action-skill declare-skill passive-skill)
+	  :for posx :from skill-posx :to 900 :by 400
+	  :for posy = (- skill-posy line-width)
+	  :do (let* ((skill-data (getf *all-skill-tag-and-data* skill-tag))
+		     (name (getf skill-data :name)))
+		(gk:draw-text (format nil "~a" name) (gk:vec2 posx posy)
+			      :fill-color *white* :font font)))))
+
+
+;;ランダムユニット
+(defmethod draw-recruit-btn ((btn recruit-random-unit-btn))
+  (with-slots (unit pos string w h font color) btn
+    (let* ((adjust (gk:vec2 8 10))
+	   (rounding 10)
+	   (thickness 3))
+      (if (collide-p *mouse* btn)
+     	  (progn
+	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
+      	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+	    (draw-unit-status unit 300 700 690 560 970 660 300 200 45 *font40*))
+	  (progn
+	    (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+				  :thickness thickness :rounding rounding)
+     	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
+
+;;戻るボタン
+(defmethod draw-recruit-btn ((btn end-recruit-btn))
+  (draw-text-btn-with-waku btn 3 (gk:vec2 4 8) :rounding 10))
+
+;;仲間募集
+(defun draw-recruit ()
+  (with-slots (btn-list) *game*
+    (loop :for btn :in btn-list
+	  :do (draw-recruit-btn btn))))
+
 (defun draw-town ()
   (with-slots (action-state) *game*
     (draw-welcome-town)
     (case action-state 
       (:town-menu (draw-town-menu))
-      (:shop (draw-shop-item)))))
+      (:shop (draw-shop-item))
+      (:recruit (draw-recruit)))))
 
 ;;---------------------------------------------------------------------------------------------------------
 ;;レベルアップ
@@ -901,4 +994,216 @@
 (defun draw-create-init-party ()
   (draw-init-job-btn)
   (draw-create-init-party-supple))
-;;---------------------------------------------------------------------------------------------------------)
+;;---------------------------------------------------------------------------------------------------------
+;;種族選択画面
+
+(defun draw-creating ()
+  (gk:draw-text "主人公キャラ作成中" (gk:vec2 200 730) :fill-color (gk:vec4 0.3 0.6 0.8 1) :font *font128*))
+
+(defun draw-select-race ()
+  (with-slots (btn-list) *game*
+    (draw-creating)
+    (gk:draw-text "種族を選んでください" (gk:vec2 160 660) :fill-color (gk:vec4 0.8 0.6 0.4 1) :font *font64*)
+    (loop :for btn :in btn-list
+	  :do (draw-text-btn-with-waku btn 4 (gk:vec2 8 14) :rounding 10))))
+;;---------------------------------------------------------------------------------------------------------
+;;技能選択画面
+;;取得技能ボタン
+(defmethod draw-job-btn ((btn job-btn))
+  (with-slots (job pos string w h font color) btn
+    (let* ((adjust (gk:vec2 8 14))
+	   (data (getf *init-job-data-list* job))
+	   (tec (getf data :tec))
+	   (con (getf data :con))
+	   (mnd (getf data :mnd))
+	   (rounding 10)
+	   (thickness 3)
+	   (exp-point (getf data :exp-point)))
+      (if (collide-p *mouse* btn)
+     	  (progn
+	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
+      	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+	    (gk:draw-text "基礎能力値" (gk:vec2 790 600) :fill-color *white* :font *font64*)
+	    (gk:draw-text (format nil "技:~d 体:~d 心:~d" tec con mnd)
+			  (gk:vec2 740 540) :fill-color *white* :font *font64*)
+	    (gk:draw-text (format nil "初期経験点:~d" exp-point) (gk:vec2 740 480)
+			  :fill-color *white* :font *font64*))
+	  (progn
+	    (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+				  :thickness thickness :rounding rounding)
+     	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
+
+;;戻るボタン
+(defmethod draw-job-btn ((btn back-select-race-btn))
+  (draw-text-btn-with-waku btn 3 (gk:vec2 3 8) :rounding 10))
+
+(defun draw-select-job ()
+  (with-slots (btn-list selected-unit) *game*
+    (draw-creating)
+    (gk:draw-text "初期技能を選んでください" (gk:vec2 130 660) :fill-color (gk:vec4 0.8 0.6 0.4 1) :font *font64*)
+    (gk:draw-text (format nil "種族：~a" (race selected-unit)) (gk:vec2 730 660) :fill-color (gk:vec4 1 0.1 0.7 1) :font *font64*)
+    (gk:draw-text "技：命中や回避に影響" (gk:vec2 700 350) :fill-color *white* :font *font48*)
+    (gk:draw-text "体：物理ダメージやHPに影響" (gk:vec2 700 290) :fill-color *white* :font *font48*)
+    (gk:draw-text "心：魔法ダメージやMPに影響" (gk:vec2 700 230) :fill-color *white* :font *font48*)
+    (gk:draw-text "経験点：消費して技能を取得できる" (gk:vec2 670 180) :fill-color *white* :font *font48*)
+    (loop :for btn :in btn-list
+	  :do (draw-job-btn btn))))
+
+;;---------------------------------------------------------------------------------------------------------
+;;初期能力値決定画面
+(defun draw-init-ability ()
+  (with-slots (selected-unit btn-list) *game*
+    (with-slots (str-dice dex-dice vit-dice agi-dice int-dice res-dice num) *ability-dice*
+    (with-slots (con mnd tec) selected-unit
+      (draw-creating)
+      (loop :for btn :in btn-list
+	    :do (draw-text-btn-with-waku btn 3 (gk:vec2 4 9) :rounding 10))
+      (gk:draw-text "初期能力値を決定してください" (gk:vec2 160 660) :fill-color (gk:vec4 0.8 0.6 0.4 1) :font *font64*)
+      (gk:draw-text (format nil "基礎能力値 技:~d 体:~d 心:~d" tec con mnd)
+		    (gk:vec2 160 610) :fill-color (gk:vec4 1 0.3 0.4 1) :font *font48*)
+      (gk:draw-text (format nil "あと~d回" num) (gk:vec2 650 50) :fill-color (gk:vec4 1 1 0 1) :font *font64*)
+      (let ((posx 120)
+	    (posy 560)
+	    (dice-posx 385)
+	    (des-posx 540)
+	    (rect-x 360)
+	    (line-width 58)
+	    (font *font48*))
+	(gk:draw-text (format nil "　筋力 = ~2d + " con) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-rect (gk:vec2 rect-x (- posy 15)) 80 50 :stroke-paint *white* :thickness 3)
+	(gk:draw-text (format nil "~2d" str-dice) (gk:vec2 dice-posx posy) :fill-color (gk:vec4 0 1 0 1) :font *font48*)
+	(gk:draw-text "物理攻撃力に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "器用度 = ~2d + " tec) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-rect (gk:vec2 rect-x (- posy 15)) 80 50 :stroke-paint *white* :thickness 3)
+	(gk:draw-text (format nil "~2d" dex-dice) (gk:vec2 dice-posx posy) :fill-color (gk:vec4 0 1 0 1) :font *font48*)
+	(gk:draw-text "命中率に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "敏捷度 = ~2d + " tec) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-rect (gk:vec2 rect-x (- posy 15)) 80 50 :stroke-paint *white* :thickness 3)
+	(gk:draw-text (format nil "~2d" agi-dice) (gk:vec2 dice-posx posy) :fill-color (gk:vec4 0 1 0 1) :font *font48*)
+	(gk:draw-text "回避率に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "　知力 = ~2d + " mnd) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-rect (gk:vec2 rect-x (- posy 15)) 80 50 :stroke-paint *white* :thickness 3)
+	(gk:draw-text (format nil "~2d" int-dice) (gk:vec2 dice-posx posy) :fill-color (gk:vec4 0 1 0 1) :font *font48*)
+	(gk:draw-text "魔法攻撃力に影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "生命力 = ~2d + " con) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-rect (gk:vec2 rect-x (- posy 15)) 80 50 :stroke-paint *white* :thickness 3)
+	(gk:draw-text (format nil "~2d" vit-dice) (gk:vec2 dice-posx posy) :fill-color (gk:vec4 0 1 0 1) :font *font48*)
+	(gk:draw-text "HPに影響" (gk:vec2 des-posx posy) :fill-color *white* :font font)
+	(gk:draw-text (format nil "精神力 = ~2d + " mnd) (gk:vec2 posx (decf posy line-width)) :fill-color *white* :font *font48*)
+	(gk:draw-rect (gk:vec2 rect-x (- posy 15)) 80 50 :stroke-paint *white* :thickness 3)
+	(gk:draw-text (format nil "~2d" res-dice) (gk:vec2 dice-posx posy) :fill-color (gk:vec4 0 1 0 1) :font *font48*)
+	(gk:draw-text "MPに影響" (gk:vec2 des-posx posy) :fill-color *white* :font font))))))
+
+
+;;---------------------------------------------------------------------------------------------------------
+;;初期技能レベルアップ
+(defmethod draw-job-levelup-btn ((btn job-level-up-btn))
+  (with-slots (selected-unit) *game*
+    (with-slots (job-level-list) selected-unit
+      (draw-text-btn-with-waku btn 3 (gk:vec2 5 10) :rounding 10)
+      (with-slots (job pos) btn
+	(let* ((now-level (getf job-level-list job))
+	       (exp-table (getf *all-job-exp-point-table* job))
+	       (required-point (getf exp-table (1+ now-level))))
+	  (gk:draw-text (format nil "Lv ~d → Lv ~d" now-level (1+ now-level))
+			(gk:add pos (gk:vec2 270 10)) :fill-color (gk:vec4 1 0.4 0 1) :font *font48*)
+	  (gk:draw-text (format nil "必要経験点 ~d" required-point)
+			(gk:add pos (gk:vec2 500 10)) :fill-color (gk:vec4 0 0.4 1 1) :font *font48*))))))
+
+(defmethod draw-job-levelup-btn ((btn back-ability-dice-btn))
+  (draw-text-btn-with-waku btn 3 (gk:vec2 5 10) :rounding 10))
+
+
+(defun draw-init-job-level-up ()
+  (with-slots (btn-list selected-unit) *game*
+    (with-slots (exp-point job-level-list) selected-unit
+      (draw-creating)
+      (gk:draw-text "成長させたい技能を選んでください (Lv2まで)" (gk:vec2 70 670)
+		    :fill-color (gk:vec4 0.2 0.6 0.2 1) :font *font48*)
+      (gk:draw-text (format nil "残り経験点:~d" exp-point) (gk:vec2 890 670)
+		    :fill-color (gk:vec4 0.4 0.6 1 1) :font *font48*)
+      (gk:draw-rect (gk:vec2 875 658) 290 50 :stroke-paint *white* :rounding 10 :thickness 3)
+      (loop :for btn :in btn-list
+	    :do (draw-job-levelup-btn btn)))))
+
+;;---------------------------------------------------------------------------------------------------------
+;;test macro
+(defmacro collide-mouse (btn pos w h string adjust rounding font thickness color &body body)
+  ;;`(with-slots (pos w h string) ,btn
+  (let ((pos-g (gensym))
+	(btn-g (gensym))
+	(w-g (gensym))
+	(h-g (gensym))
+	(g-string (gensym))
+	(g-font (gensym))
+	(g-adjust (gensym))
+	(g-rounding (gensym))
+	(g-color (gensym))
+	(g-thickness (gensym)))
+    `(let ((,pos-g ,pos)
+	   (,w-g ,w)
+	   (,h-g ,h)
+	   (,btn-g ,btn)
+	   (,g-color ,color)
+	   (,g-string ,string)
+	   (,g-font ,font)
+	   (,g-adjust ,adjust)
+	   (,g-rounding ,rounding)
+	   (,g-thickness ,thickness))
+       (if (collide-p *mouse* ,btn-g)
+	   (progn
+	     (gk:draw-rect ,pos-g ,w-g ,h-g :fill-paint (gk:vec4 1 1 1 1) :rounding ,g-rounding)
+      	     (gk:draw-text ,g-string (gk:add ,pos-g ,g-adjust) :font ,g-font :fill-color (gk:vec4 0 0 0 1))
+	     ,@body)
+	   (progn
+	     (gk:draw-rect ,pos-g ,w-g ,h-g :stroke-paint (gk:vec4 1 1 1 1)
+				      :thickness ,g-thickness :rounding ,g-rounding)
+     	     (gk:draw-text ,g-string (gk:add ,pos-g ,g-adjust) :font ,g-font :fill-color ,g-color))))))
+
+;;初期スキル選択画面
+(defun draw-select-init-skill ()
+  (with-slots (btn-list) *game*
+    (gk:draw-text "初期特技を選んでください" (gk:vec2 300 760) :fill-color (gk:vec4 1 0 1 1) :font *font64*)
+    (loop :for btn :in btn-list
+	  :do (with-slots (pos w h description font color string) btn
+	      (let ((adjust (gk:vec2 6 9))
+		    (rounding 10)
+		    (thickness 3))
+		(collide-mouse btn pos w h string adjust 10 font 3 color (when description
+									   (gk:draw-text description (gk:vec2 60 120) :fill-color (gk:vec4 0 1 0 1) :font *font32*))))))))
+		;; (if (collide-p *mouse* btn)
+     		;;     (progn
+		;;       (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
+      		;;       (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+		;;       (when description
+		;; 	(gk:draw-text (button/description btn) (gk:vec2 60 120) :fill-color (gk:vec4 0 1 0 1) :font *font32*)))
+		;;     (progn
+		;;       (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+		;; 			    :thickness thickness :rounding rounding)
+     		;;       (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))))
+
+;;---------------------------------------------------------------------------------------------------------
+
+;;初期作成ユニットステータス表示
+(defun draw-init-player-unit-status ()
+  (with-slots (btn-list selected-unit) *game*
+    (loop :for btn :in btn-list
+	  :do (draw-text-btn-with-waku btn 3 (gk:vec2 6 9) :rounding 10))
+    (with-slots (hp maxhp mp maxmp str dex agi vit res int dex-bonus vit-bonus res-bonus
+		 int-bonus str-bonus agi-bonus magic-power job-level-list name
+		 passive-skill action-skill declare-skill race)  selected-unit
+      (gk:draw-text "主人公キャラステータス" (gk:vec2 300 750) :fill-color (gk:vec4 1 0 1 1) :font *font64*)
+      (let ((status-posx 100)
+	    (status-posy 700)
+	    (bonus-posx 500)
+	    (bonus-posy 560))
+	(draw-unit-status selected-unit 100 700 500 560 880 660 150 180 45 *font48*)
+	(gk:draw-rect (gk:vec2 (- status-posx 10) (- status-posy 470)) 380 470
+		      :stroke-paint *white* :thickness 3 :rounding 10)
+	;;種族
+	(gk:draw-rect (gk:vec2 (- bonus-posx 10) (- bonus-posy -40)) 320 100 :stroke-paint *white* :thickness 3 :rounding 10)
+	;;ボーナス
+	(gk:draw-rect (gk:vec2 (- bonus-posx 10) (- bonus-posy 290)) 320 290 :stroke-paint *white* :thickness 3 :rounding 10)
+	;;技能
+	(gk:draw-rect (gk:vec2 870 200) 320 500 :stroke-paint *white* :thickness 3 :rounding 10)
+	))))

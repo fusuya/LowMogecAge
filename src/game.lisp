@@ -1,5 +1,5 @@
 (in-package :lowmogecage)
-;;TODO クエスト　買い物　町 レヴェルアップ　ｵｶﾈ増減
+;;TODO クエスト
 ;; スキル増やす スキルのターゲット
 (gk:defgame lowmogecage () ()
   (:viewport-width *window-w*)
@@ -89,20 +89,19 @@
   (setf *game* (make-instance 'game :state :title
 			      :money 3000
 			      :item (create-item-n +w_max+)
-			      :world-pos (gk:vec2 200 400)
+			      :world-pos (gk:vec2 358 520)
 				    :scroll (gk:vec2 0 0)
 				    :enemy-rate (copy-tree *appear-enemy-rate-monster*) ;; todo
                       		    :btn-list (list (make-instance 'game-start-btn :pos (gk:vec2 550 200)
                                                 				   :string "はじめる" :color (gk:vec4 1 0.5 0.5 1)
 										   :w 190 :h 54
-                                                				   :font *font64*
-                                                				   :font-size 64)
+                                                				   :font *font64*)
                                     		    (make-instance 'game-end-btn :pos (gk:vec2 570 120)
                                                   				 :font *font64*
                                                   				 :string "おわる" :color (gk:vec4 1 0.5 0.4 1)
-										 :w 145 :h 54
-                                                  				 :font-size 64)))
-	*mouse* (make-instance 'mouse))
+										 :w 145 :h 54)))
+	*mouse* (make-instance 'mouse)
+	*ability-dice* (make-instance 'ability-dice))
   ;;(test-create-party-chara)
   (bind-mouse-event))
 
@@ -130,6 +129,24 @@
 (defun get-mouse-coord ()
   (with-slots (x y) *mouse*
     (values (floor x *battle-obj-w*) (floor y *battle-obj-h*))))
+;;------------------------------------------------------------------------------
+;;種族ごとのランダム初期能力値
+(defun get-ability-dice-by-race (race)
+  (cond
+    ((string= race "人間")
+     (values (dice 2 6) (dice 2 6) (dice 2 6) (dice 2 6) (dice 2 6) (dice 2 6)))
+    ((string= race "エルフ")
+     (values (dice 2 6) (dice 2 6) (dice 1 6) (dice 2 6) (dice 2 6) (dice 2 6)))
+    ((string= race "ドワーフ")
+     (values (+ (dice 2 6) 6) (dice 1 6) (dice 1 6) (dice 2 6) (dice 1 6) (+ (dice 2 6) 6)))
+    ((string= race "タビット")
+     (values (dice 1 6) (dice 1 6) (dice 1 6) (dice 2 6) (+ (dice 2 6) 6) (dice 2 6)))
+    ((string= race "ルーンフォーク")
+     (values (dice 2 6) (dice 1 6) (dice 2 6) (dice 2 6) (dice 2 6) (dice 1 6)))
+    ((string= race "ナイトメア")
+     (values (dice 2 6) (dice 2 6) (dice 1 6) (dice 1 6) (dice 2 6) (dice 2 6)))
+    ((string= race "リカント")
+     (values (dice 1 6) (+ (dice 1 6) 3) (dice 2 6) (dice 2 6) (+ (dice 1 6) 6) (dice 1 6)))))
 ;;------------------------------------------------------------------------------
 ;;当たり判定
 (defmethod collide-p ((mouse mouse) obj)
@@ -187,6 +204,118 @@
 						:string string :w 200 :h 60
 						:font *font64* :color (gk:vec4 1 0 1 1))
 		      btn-list)))))
+
+;;------------------------------------------------------------------------------------
+;;ランダム種族ゲット
+(defun get-random-race-tag ()
+  (nth (random (length *all-race-tag-list*)) *all-race-tag-list*))
+
+;;ゲット種族の名前
+(defun get-race-name (race-data)
+  (getf race-data :name))
+
+;;ユニットに種族の名前セット
+(defun set-race-name (unit race-data)
+  (setf (race unit) (get-race-name race-data)))
+
+;;ランダム初期技能ゲット
+(defun get-random-init-job-tag (race-data)
+  (let ((job-list (getf race-data :init-job-list)))
+    (nth (random (length job-list)) job-list)))
+
+;;初期技能レベルアップ
+(defun init-job-level-up (unit init-job-tag)
+  (with-slots (job-level-list) unit
+    (cond
+      ((eq init-job-tag :none)
+       nil)
+      ((listp init-job-tag)
+       (dolist (tag init-job-tag)
+	 (incf (getf job-level-list tag))))
+      (t
+       (incf (getf job-level-list init-job-tag))))))
+
+;;初期基本能力値セット
+(defun set-init-ability-value (unit init-job-data)
+  (with-slots (con mnd tec) unit
+    (setf con (getf init-job-data :con)
+	  mnd (getf init-job-data :mnd)
+	  tec (getf init-job-data :tec))))
+
+;;画像セット
+(defun set-job-img (unit init-job-data)
+  (let ((img (getf init-job-data :img)))
+    (setf (origin unit) (gk:vec2 0 (* img *origin-obj-h*))
+	  (translate-y unit) (- (* img *battle-obj-h*)))))
+
+;;初期経験点セット
+(defun set-init-exp-point (unit init-job-data)
+  (setf (exp-point unit) (getf init-job-data :exp-point)))
+
+;;初期ランダム能力値セット
+(defun set-random-ability-value (unit)
+  (with-slots (race con mnd tec str dex agi vit res int move) unit
+    (multiple-value-bind (dex-value agi-value str-value vit-value int-value res-value) (get-ability-dice-by-race race)
+      (setf str (+ con str-value) dex (+ tec dex-value) int (+ mnd int-value)
+	    agi (+ tec agi-value) vit (+ con vit-value) res (+ mnd res-value)
+	    move (max 4 (floor agi 3))))))
+
+;;初期技能ランダムレベルアップ
+(defun init-random-job-level-up (unit)
+  (with-slots (exp-point job-level-list) unit
+    (loop :for i :from 0
+	  :do
+	     (let* ((level-up-available-list
+		      (remove nil (loop :for job-tag :in *all-job-list*
+					:collect  (let* ((exp-table (getf *all-job-exp-point-table* job-tag))
+							 (now-job-level (getf job-level-list job-tag))
+							 (required-exp-point (getf exp-table (1+ now-job-level))))
+						    (when (>= exp-point required-exp-point)
+						      (list job-tag required-exp-point)))))))
+	       (if level-up-available-list
+		   (let ((random-job-tag (nth (random (length level-up-available-list)) level-up-available-list)))
+		     (incf (getf job-level-list (car random-job-tag)))
+		     (decf exp-point (cadr random-job-tag)))
+		   (return))))))
+
+;;初期特技セット
+(defun set-init-random-skill (unit)
+  (with-slots (passive-skill action-skill declare-skill) unit
+    (let* ((skill-tag (nth (random (length *init-skill-tag-list*)) *init-skill-tag-list*))
+	   (skill-type (getf (getf *all-skill-tag-and-data* skill-tag) :skill-type)))
+      (case skill-type
+	(:passive (push skill-tag passive-skill))
+	(:action (push skill-tag action-skill))
+	(:declare (push skill-tag declare-skill))))))
+
+;;名前セット
+(defun set-random-unit-name (unit)
+  (setf (name unit) (nth (random (length *name-list*)) *name-list*)))
+
+;;movecostセット
+(defun set-move-cost (unit race-data)
+  (setf (movecost unit) (getf race-data :movecost)))
+
+;;ランダムユニット作成
+(defun create-random-unit ()
+  (let* ((unit (make-instance 'unit :w *battle-obj-w* :h *battle-obj-h*))
+	 (race-tag (get-random-race-tag))
+	 (race-data (getf *all-race-tag-and-data-list* race-tag))
+	 (init-race-job-tag (get-random-init-job-tag race-data))
+	 (init-job-data (getf *init-job-data-list* init-race-job-tag))
+	 (init-job-tag (getf init-job-data :tag)))
+    (set-race-name unit race-data)
+    (set-move-cost unit race-data)
+    (init-job-level-up unit init-job-tag)
+    (set-init-exp-point unit init-job-data)
+    (set-init-ability-value unit init-job-data)
+    (set-job-img unit init-job-data)
+    (set-random-ability-value unit)
+    (init-random-job-level-up unit)
+    (set-init-random-skill unit)
+    (set-random-unit-name unit)
+    (unit-status-adjust unit)
+    unit))
 
 ;;--------------------------------------------------------------------------------
 ;;装備アイテムボタンつくる
@@ -304,6 +433,134 @@
 		(setf (gk:y pos) posy)))))
 
 ;;------------------------------------------------------------------------------------
+;;種族選択ボタン
+(defun create-race-btn ()
+  (with-slots (btn-list) *game*
+    (loop :for posx = 220
+	  :for posy :from 550 :downto 0 :by 80
+	  :for race-tag :in *all-race-tag-list*
+	  :do (let ((race-data (getf *all-race-tag-and-data-list* race-tag)))
+		(push (make-instance 'race-btn :pos (gk:vec2 posx posy)
+					     :tag race-tag
+					     :string (getf race-data :name)
+					     :w 400 :h 60
+					     :font *font64* :color *white*)
+		    btn-list)))))
+
+;;------------------------------------------------------------------------------------
+;;初期技能選択ボタン
+(defun create-job-btn (race-job-list)
+  (with-slots (btn-list) *game*
+    (loop :for posx = 150
+	  :for posy :from 570 :downto 0 :by 76
+	  :for job :in race-job-list
+	  :do (let* ((data (getf *init-job-data-list* job))
+		     (name (getf data :name)))
+		(push (make-instance 'job-btn :pos (gk:vec2 posx posy)
+						:string name :job job
+						:w 500 :h 60
+						:font *font64* :color *white*)
+		      btn-list)))
+    (push (make-instance 'back-select-race-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					       :font *font64* :color *white*
+					       :string "戻る")
+	  btn-list)))
+;;------------------------------------------------------------------------------------
+;;初期能力値ダイスボタン
+(defun create-ability-dice-btn ()
+  (with-slots (btn-list) *game*
+    (push (make-instance 'ability-dice-btn :pos (gk:vec2 200 50) :box? t
+					   :font *font64* :color (gk:vec4 0 0.5 1 1)
+					   :string "サイコロを振る" :w 370 :h 50)
+	  btn-list)
+    (push (make-instance 'ability-dice-end-btn :pos (gk:vec2 960 50) :box? t
+					   :font *font64* :color (gk:vec4 1 0.5 1 1)
+					   :string "次へ" :w 100 :h 50)
+	  btn-list)
+    (push (make-instance 'back-select-job-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					       :font *font64* :color *white*
+					      :string "戻る")
+	  btn-list)))
+
+
+;;------------------------------------------------------------------------------------
+;;初期技能レベルアップボタン
+(defun create-job-level-up-btn ()
+  (with-slots (btn-list) *game*
+    (loop :for tag :in *all-job-list*
+	  :for posx = 140
+	  :for posy :from 610 :downto 0 :by 59
+	  :do (let* ((job-data (getf *all-job-tag-and-data-list* tag))
+		     (name (getf job-data :name)))
+		(push (make-instance 'job-level-up-btn :pos (gk:vec2 posx posy)
+						       :job tag :string name :w 220 :h 44
+						       :font *font48* :color *white*)
+		      btn-list)))
+    (push (make-instance 'back-ability-dice-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					    :font *font64* :color *white*
+					    :string "戻る")
+	  btn-list)
+    (push (make-instance 'job-level-up-end-btn :pos (gk:vec2 960 30) :w 100 :h 50
+					       :font *font64* :color *white*
+					       :string "次へ")
+	  btn-list)))
+;;------------------------------------------------------------------------------------
+;;初期特技ボタン
+(defun create-init-skill-btn ()
+  (with-slots (btn-list) *game*
+    (let ((posx 80)
+	  (posy 700))
+      (loop :for skill-tag :in *init-skill-tag-list*
+	    :for i :from 1 :to 50
+	    :do (let* ((skill-data (getf *all-skill-tag-and-data* skill-tag))
+		       (name (getf skill-data :name))
+		       (skill-type (getf skill-data :skill-type)))
+		  (push (make-instance 'init-skill-btn :string name
+						       :skill-type skill-type :tag skill-tag
+						       :pos (gk:vec2 posx posy)
+						       :w 370 :h 38
+						       :description (getf skill-data :description)
+						       :font *font40* :color *white*)
+			btn-list)
+		  (incf posx 380)
+		  (when (zerop (mod i 3))
+		    (setf posx 80
+			  posy (- posy 42)))))
+      (push (make-instance 'back-to-select-job-level-up-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					    :font *font64* :color *white*
+					    :string "戻る")
+	    btn-list))))
+;;------------------------------------------------------------------------------------
+;;初期作成ユニットステータス表示
+(defun create-show-init-player-unit-status-btn ()
+  (with-slots (btn-list) *game*
+    (push (make-instance 'back-to-select-init-skill-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					    :font *font64* :color *white*
+					    :string "戻る")
+	  btn-list)
+    (push (make-instance 'create-init-player-unit-end-btn :pos  (gk:vec2 960 30) :w 100 :h 50
+							  :font *font64* :color *white*
+							  :string "開始")
+	  btn-list)))
+;;------------------------------------------------------------------------------------
+;;仲間募集
+;;ランダムユニットボタン
+(defun create-recruit-random-unit-btn ()
+  (with-slots (btn-list) *game*
+    (loop :repeat 5
+	  :for posx = 50
+	  :for posy :from 600 :downto 0 :by 50
+	  :do (let ((unit (create-random-unit)))
+		(push (make-instance 'recruit-random-unit-btn :pos (gk:vec2 posx posy)
+							      :string (name unit)
+							      :w 200 :h 40 :unit unit
+							      :font *font40* :color *white*)
+		      btn-list)))
+    (push (make-instance 'end-recruit-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					    :font *font64* :color *white*
+					  :string "戻る")
+	  btn-list)))
+;;------------------------------------------------------------------------------------
 (defmethod equip-item ((item weapondesc) unit)
   (with-slots (weapon name shield) unit
     (unless (and (eq (hand item) :2h) ;;盾持ってる場合2hは装備できない
@@ -388,20 +645,194 @@
 
 
 
-;;ゲーム開始ボタン TODO
+;;ゲーム開始ボタン キャラクリへ行く TODO
 (defmethod btn-click-event ((btn game-start-btn))
-  (with-slots (state action-state btn-list) *game*
-    (setf state :create-init-party ;;debug
-	  btn-list nil)
-    (create-init-job-btn)))
+  (with-slots (state action-state btn-list selected-unit item) *game*
+    (setf state :select-race ;;:create-init-party ;;debug
+	  btn-list nil
+	  selected-unit (make-instance 'unit :w *battle-obj-w* :h *battle-obj-h*
+					     :lvup-exp 100 ;;test
+					     :state :inaction :img-id :job-img
+					     :name (nth (random (length *name-list*)) *name-list*)))
+    (let ((weapon (item-make +w_knife+)))
+      (setf (equiped weapon) (name selected-unit)
+	    (weapon selected-unit) weapon)
+      (push weapon item))
+    (create-race-btn)))
+    ;;(create-init-job-btn)))
     ;;(set-battle-field)
     ;;(set-party-battle-ready-pos)
     ;;(get-show-cell-coord)))
 
 
-
+;;タイトル画面のゲーム終了ボタン
 (defmethod btn-click-event ((btn game-end-btn))
   (gk:stop))
+
+
+;;種族選択ボタン
+(defmethod btn-click-event ((btn race-btn))
+  (with-slots (selected-unit state btn-list) *game*
+    (with-slots (string tag) btn
+      (let ((race-data (getf *all-race-tag-and-data-list* tag)))
+	(setf (race selected-unit) string
+	      (movecost selected-unit) (getf race-data :movecost)
+	      state :select-job
+	      btn-list nil)
+	(cond
+	  ((string= string "人間") (create-job-btn *human-job-list*))
+	  ((string= string "エルフ") (create-job-btn *elf-job-list*))
+	  ((string= string "ドワーフ") (create-job-btn *dwarf-job-list*))
+	  ((string= string "タビット") (create-job-btn *tabbit-job-list*))
+	  ((string= string "ルーンフォーク") (create-job-btn *runefolk-job-list*))
+	  ((string= string "ナイトメア") (create-job-btn *nightmare-job-list*))
+	  ((string= string "リカント") (create-job-btn *lycant-job-list*)))))))
+
+;;種族選択画面へ戻るボタン
+(defmethod btn-click-event ((btn back-select-race-btn))
+  (with-slots (btn-list state) *game*
+    (with-slots (str-dice dex-dice vit-dice int-dice agi-dice res-dice num) *ability-dice*
+      (setf btn-list nil
+	    state :select-race
+	    str-dice 0 dex-dice 0 vit-dice 0 int-dice 0 agi-dice 0 res-dice 0 num 3)
+      (create-race-btn))))
+
+;;技能選択ボタン
+(defmethod btn-click-event ((btn job-btn))
+  (with-slots (selected-unit state btn-list) *game*
+    (with-slots (job-level-list con tec mnd exp-point origin translate-y) selected-unit
+      (with-slots (job) btn
+	(let* ((data (getf *init-job-data-list* job))
+	       (img (getf data :img))
+	       (con1 (getf data :con))
+	       (mnd1 (getf data :mnd))
+	       (tec1 (getf data :tec))
+	       (exp-1 (getf data :exp-point))
+	       (tag (getf data :tag)))
+	  (cond ((eq tag :none)
+		 nil)
+		((listp tag) ;;初期技能複数の場合あり
+		 (dolist (n tag)
+		   (incf (getf job-level-list n))))
+		(t
+		 (incf (getf job-level-list tag))))
+	  (setf state :dice-init-ability
+		con con1 mnd mnd1 tec tec1
+		exp-point exp-1
+		btn-list nil
+		origin (gk:vec2 0 (* img *origin-obj-h*))
+		translate-y (- (* img *battle-obj-h*)))
+	  (create-ability-dice-btn))))))
+
+;;技能選択画面へ戻るボタン
+(defmethod btn-click-event ((btn back-select-job-btn))
+  (with-slots (selected-unit btn-list state) *game*
+    (with-slots (job-level-list race) selected-unit
+      (setf job-level-list (copy-tree *job-level-list*)
+	    btn-list nil
+	    state :select-job)
+      (cond
+	((string= race "人間") (create-job-btn *human-job-list*))
+	((string= race "エルフ") (create-job-btn *elf-job-list*))
+	((string= race "ドワーフ") (create-job-btn *dwarf-job-list*))
+	((string= race "タビット") (create-job-btn *tabbit-job-list*))
+	((string= race "ルーンフォーク") (create-job-btn *runefolk-job-list*))
+	((string= race "ナイトメア") (create-job-btn *nightmare-job-list*))
+	((string= race "リカント") (create-job-btn *lycant-job-list*))))))
+
+
+;;初期能力値ダイスボタン
+(defmethod btn-click-event ((btn ability-dice-btn))
+  (with-slots (selected-unit) *game*
+    (with-slots (race) selected-unit
+      (with-slots (str-dice agi-dice vit-dice res-dice int-dice dex-dice num) *ability-dice*
+	(when (> num 0)
+	  (decf num)
+	  (multiple-value-bind (dex agi str vit int res) (get-ability-dice-by-race race)
+	    (setf str-dice str dex-dice dex vit-dice vit res-dice res int-dice int agi-dice agi)))))))
+
+;;初期能力値決定　終了ボタン
+(defmethod btn-click-event ((btn ability-dice-end-btn))
+  (with-slots (selected-unit state btn-list) *game*
+    (with-slots (str dex agi vit int res con mnd tec move) selected-unit
+      (with-slots (str-dice agi-dice vit-dice res-dice int-dice dex-dice) *ability-dice*
+	(setf str (+ con str-dice) dex (+ tec dex-dice) vit (+ con vit-dice) res (+ mnd res-dice)
+	      agi (+ tec agi-dice)  int (+ mnd int-dice)
+	      btn-list nil
+	      move (max 4 (floor agi 3)) ;;移動力 敏捷度/2
+	      state :init-job-level-up)
+	(create-job-level-up-btn)))))
+
+;;初期能力値決定画面へ戻る
+(defmethod btn-click-event ((btn back-ability-dice-btn))
+  (with-slots (selected-unit btn-list state) *game*
+    (with-slots (job-level-list race) selected-unit
+      (setf btn-list nil
+	    state :dice-init-ability)
+      (create-ability-dice-btn))))
+
+;;初期技能レベルアップボタン
+(defmethod btn-click-event ((btn job-level-up-btn))
+  (with-slots (selected-unit) *game*
+    (with-slots (exp-point job-level-list) selected-unit
+      (with-slots (job) btn
+	(let* ((now-level (getf job-level-list job))
+	       (exp-table (getf *all-job-exp-point-table* job))
+	       (required-point (getf exp-table (1+ now-level))))
+	  (when (and (>= 2 now-level)
+		     (>= exp-point required-point))
+	    (incf (getf job-level-list job))
+	    (decf exp-point required-point)))))))
+
+;;初期技能レベルアップ終了
+(defmethod btn-click-event ((btn job-level-up-end-btn))
+  (with-slots (state btn-list) *game*
+    (setf state :select-init-skill
+	  btn-list nil)
+    (create-init-skill-btn)))
+
+;;初期技能レベルアップ画面へ戻る
+(defmethod btn-click-event ((btn back-to-select-job-level-up-btn))
+  (with-slots (state btn-list) *game*
+      (setf state :init-job-level-up
+	    btn-list nil)
+      (create-job-level-up-btn)))
+
+;;初期特技ボタン 選んだらステータス表示画面へ
+(defmethod btn-click-event ((btn init-skill-btn))
+  (with-slots (state btn-list selected-unit) *game*
+    (with-slots (passive-skill declare-skill action-skill) selected-unit
+      (with-slots (tag skill-type) btn
+	(case skill-type
+	  (:passive (push tag passive-skill))
+	  (:declare (push tag declare-skill))
+	  (:action (push tag action-skill)))
+	(unit-status-adjust selected-unit)
+	(setf state :show-init-player-unit-status
+	      btn-list nil)
+	(create-show-init-player-unit-status-btn)))))
+
+
+;;初期スキル選択画面へ戻る
+(defmethod btn-click-event ((btn back-to-select-init-skill-btn))
+  (with-slots (state btn-list selected-unit) *game*
+    (with-slots (passive-skill declare-skill action-skill) selected-unit
+      (setf state :select-init-skill
+	    btn-list nil
+	    passive-skill nil declare-skill nil action-skill nil)
+      (create-init-skill-btn))))
+
+;;ゲーム開始　キャラクリｵﾜﾘ
+(defmethod btn-click-event ((btn create-init-player-unit-end-btn))
+  (with-slots (state party btn-list selected-unit selected-town action-state) *game*
+    (push selected-unit party)
+    (setf state :town
+	  btn-list nil
+	  selected-unit nil
+	  action-state :town-menu
+	  selected-town (getf *town-list* 5))
+    (create-town-menu-button)))
+
 
 ;;次へボタン
 (defmethod btn-click-event ((btn next-item-page))
@@ -482,7 +913,25 @@
 
 ;;仲間募集
 (defmethod btn-click-event ((btn recruit-btn))
-  )
+  (with-slots (btn-list action-state selected-town) *game*
+    (setf btn-list nil
+	  action-state :recruit)
+    (create-recruit-random-unit-btn)))
+
+;;仲間ゲット
+(defmethod btn-click-event ((btn recruit-random-unit-btn))
+  (with-slots (party btn-list) *game*
+    (with-slots (unit) btn
+      (when (> 5 (length party))
+	(push unit party)
+	(setf btn-list (remove btn btn-list :test #'equal))))))
+
+;;仲間募集から戻る
+(defmethod btn-click-event ((btn end-recruit-btn))
+  (with-slots (btn-list action-state selected-town) *game*
+    (setf btn-list nil
+	  action-state :town-menu)
+    (create-town-menu-button)))
 
 ;;店から戻るボタン
 (defmethod btn-click-event ((btn end-shop-btn))
@@ -2540,8 +2989,6 @@
 ;;初期パーティ作り
 ;;とりあえずジョブ選ぶだけ
 
-
-
 (defun create-init-party-event ()
   (with-slots (btn-list temp-init-party) *game*
     (with-slots (left) *mouse*
@@ -2551,7 +2998,16 @@
 		 (when (collide-p *mouse* btn)
 		   (btn-click-event btn)
 		   (return)))))))
-
+;;----------------------------------------------------------------------------------------------------
+;;ボタンリストを押すだけのイベント
+(defun only-btn-list-click-event ()
+  (with-slots (btn-list) *game*
+    (with-slots (left) *mouse*
+      (when left
+	(loop :for btn :in btn-list
+	      :do
+		 (when (collide-p *mouse* btn)
+		   (btn-click-event btn)))))))
 
 ;;----------------------------------------------------------------------------------------------------
 (defmethod gk:act ((app lowmogecage))
@@ -2560,7 +3016,20 @@
       (:town
        (case action-state
 	 (:town-menu (town-event))
-	 (:shop (town-shop-event))))
+	 (:shop (town-shop-event))
+	 (:recruit (only-btn-list-click-event))))
+      (:select-race
+       (only-btn-list-click-event))
+      (:select-job
+       (only-btn-list-click-event))
+      (:dice-init-ability
+       (only-btn-list-click-event))
+      (:init-job-level-up
+       (only-btn-list-click-event))
+      (:select-init-skill
+       (only-btn-list-click-event))
+      (:show-init-player-unit-status
+       (only-btn-list-click-event))
       (:world-map-test
        (set-world-map-data))
       (:create-init-party
@@ -2617,6 +3086,18 @@
     (gk:draw-rect (gk:vec2 0 0) *scale-window-w* *scale-window-h* :fill-paint (gk:vec4 0 0 0 1))
     (draw-mouse-test )
     (case state
+      (:select-race
+       (draw-select-race))
+      (:select-job
+       (draw-select-job))
+      (:dice-init-ability
+       (draw-init-ability))
+      (:init-job-level-up
+       (draw-init-job-level-up))
+      (:select-init-skill
+       (draw-select-init-skill))
+      (:show-init-player-unit-status
+       (draw-init-player-unit-status))
       (:town
        (draw-town))
       (:create-init-party
