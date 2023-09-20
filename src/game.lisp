@@ -560,6 +560,23 @@
 					    :font *font64* :color *white*
 					  :string "戻る")
 	  btn-list)))
+
+;;;;------------------------------------------------------------------------------------
+;;パーティユニットステータス表示＆外す
+(defun create-show-unit-status-btn ()
+  (with-slots (btn-list party) *game*
+    (loop :for p :in party
+	  :for posx = 50
+	  :for posy :from 600 :downto 0 :by 50
+	  :do (push (make-instance 'show-unit-status-btn :pos (gk:vec2 posx posy)
+							 :string (name unit)
+							 :w 200 :h 40 :unit p
+							 :font *font40* :color *white*)
+		    btn-list))
+    (push (make-instance 'end-recruit-btn :pos (gk:vec2 20 30) :w 100 :h 50
+					  :font *font64* :color *white*
+					  :string "戻る")
+	  btn-list)))
 ;;------------------------------------------------------------------------------------
 (defmethod equip-item ((item weapondesc) unit)
   (with-slots (weapon name shield) unit
@@ -617,8 +634,8 @@
     (loop :for posx = 80
 	  :for posy :from 300 :to 1000 :by 70
 	  :for des :in *town-description*
-	  :for kind :in (list 'town-exit-btn 'cash-exchange-btn 'inn-btn 'recruit-btn 'shop-btn)
-	  :for str :in '("町を出る" "換金アイテムを売る ""宿屋" "仲間募集" "買い物")
+	  :for kind :in (list 'town-exit-btn 'cash-exchange-btn 'inn-btn 'party-status-confirm-btn 'recruit-btn 'shop-btn)
+	  :for str :in '("町を出る" "換金アイテムを売る ""宿屋" "ステータス確認 ""仲間募集" "買い物")
 	  :do (let* ((len (length str))
 		     (btn (make-instance kind :pos (gk:vec2 posx posy)
 					     :w (* len 52) :h 50
@@ -917,6 +934,13 @@
     (setf btn-list nil
 	  action-state :recruit)
     (create-recruit-random-unit-btn)))
+
+;;仲間ステータス確認
+(defmethod btn-click-event ((btn party-status-confirm-btn))
+   (with-slots (btn-list action-state selected-town) *game*
+    (setf btn-list nil
+	  action-state :confirm-status)
+    (create-show-unit-status-btn)))
 
 ;;仲間ゲット
 (defmethod btn-click-event ((btn recruit-random-unit-btn))

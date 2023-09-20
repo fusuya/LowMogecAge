@@ -25,7 +25,26 @@
     (gk:draw-rect pos w h :fill-paint fill-paint :stroke-paint stroke-paint :thickness 4)))
 
 
-
+;;test macro
+(defmacro collide-mouse (btn adjust rounding thickness &body body)
+  (let ((btn-g (gensym))
+	(g-adjust (gensym))
+	(g-rounding (gensym))
+	(g-thickness (gensym)))
+    `(let ((,btn-g ,btn)
+	   (,g-adjust ,adjust)
+	   (,g-rounding ,rounding)
+	   (,g-thickness ,thickness))
+       (with-slots (pos color font w h string) ,btn-g
+	   (if (collide-p *mouse* ,btn-g)
+	       (progn
+		 (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding ,g-rounding)
+      		 (gk:draw-text string (gk:add pos ,g-adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+		 ,@body)
+	       (progn
+		 (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+						:thickness ,g-thickness :rounding ,g-rounding)
+     		 (gk:draw-text string (gk:add pos ,g-adjust) :font font :fill-color color)))))))
 ;;----------------------------------------------------------------------------------------------------
 ;;持ち方
 (defun get-weapon-hold-string (hand)
@@ -907,15 +926,16 @@
     (let* ((adjust (gk:vec2 8 10))
 	   (rounding 10)
 	   (thickness 3))
-      (if (collide-p *mouse* btn)
-     	  (progn
-	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
-      	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
-	    (draw-unit-status unit 300 700 690 560 970 660 300 200 45 *font40*))
-	  (progn
-	    (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
-				  :thickness thickness :rounding rounding)
-     	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
+      ;; (if (collide-p *mouse* btn)
+      ;; 	  (progn
+      ;; 	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
+      ;; 	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+      (collide-mouse btn adjust rounding thickness
+	(draw-unit-status unit 300 700 690 560 970 660 300 200 45 *font40*)))))
+	  ;; (progn
+	  ;;   (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+	  ;; 			  :thickness thickness :rounding rounding)
+     	  ;;   (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
 
 ;;戻るボタン
 (defmethod draw-recruit-btn ((btn end-recruit-btn))
@@ -1019,19 +1039,20 @@
 	   (rounding 10)
 	   (thickness 3)
 	   (exp-point (getf data :exp-point)))
-      (if (collide-p *mouse* btn)
-     	  (progn
-	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
-      	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+      ;; (if (collide-p *mouse* btn)
+      ;; 	  (progn
+      ;; 	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
+      ;; 	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
+      (collide-mouse btn adjust rounding thickness
 	    (gk:draw-text "基礎能力値" (gk:vec2 790 600) :fill-color *white* :font *font64*)
 	    (gk:draw-text (format nil "技:~d 体:~d 心:~d" tec con mnd)
 			  (gk:vec2 740 540) :fill-color *white* :font *font64*)
 	    (gk:draw-text (format nil "初期経験点:~d" exp-point) (gk:vec2 740 480)
-			  :fill-color *white* :font *font64*))
-	  (progn
-	    (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
-				  :thickness thickness :rounding rounding)
-     	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
+			  :fill-color *white* :font *font64*)))))
+	  ;; (progn
+	  ;;   (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+	  ;; 			  :thickness thickness :rounding rounding)
+     	  ;;   (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
 
 ;;戻るボタン
 (defmethod draw-job-btn ((btn back-select-race-btn))
@@ -1127,38 +1148,7 @@
 	    :do (draw-job-levelup-btn btn)))))
 
 ;;---------------------------------------------------------------------------------------------------------
-;;test macro
-(defmacro collide-mouse (btn pos w h string adjust rounding font thickness color &body body)
-  ;;`(with-slots (pos w h string) ,btn
-  (let ((pos-g (gensym))
-	(btn-g (gensym))
-	(w-g (gensym))
-	(h-g (gensym))
-	(g-string (gensym))
-	(g-font (gensym))
-	(g-adjust (gensym))
-	(g-rounding (gensym))
-	(g-color (gensym))
-	(g-thickness (gensym)))
-    `(let ((,pos-g ,pos)
-	   (,w-g ,w)
-	   (,h-g ,h)
-	   (,btn-g ,btn)
-	   (,g-color ,color)
-	   (,g-string ,string)
-	   (,g-font ,font)
-	   (,g-adjust ,adjust)
-	   (,g-rounding ,rounding)
-	   (,g-thickness ,thickness))
-       (if (collide-p *mouse* ,btn-g)
-	   (progn
-	     (gk:draw-rect ,pos-g ,w-g ,h-g :fill-paint (gk:vec4 1 1 1 1) :rounding ,g-rounding)
-      	     (gk:draw-text ,g-string (gk:add ,pos-g ,g-adjust) :font ,g-font :fill-color (gk:vec4 0 0 0 1))
-	     ,@body)
-	   (progn
-	     (gk:draw-rect ,pos-g ,w-g ,h-g :stroke-paint (gk:vec4 1 1 1 1)
-				      :thickness ,g-thickness :rounding ,g-rounding)
-     	     (gk:draw-text ,g-string (gk:add ,pos-g ,g-adjust) :font ,g-font :fill-color ,g-color))))))
+
 
 ;;初期スキル選択画面
 (defun draw-select-init-skill ()
@@ -1169,8 +1159,8 @@
 	      (let ((adjust (gk:vec2 6 9))
 		    (rounding 10)
 		    (thickness 3))
-		(collide-mouse btn pos w h string adjust 10 font 3 color (when description
-									   (gk:draw-text description (gk:vec2 60 120) :fill-color (gk:vec4 0 1 0 1) :font *font32*))))))))
+		(collide-mouse btn adjust 10 3 (when description
+						 (gk:draw-text description (gk:vec2 60 120) :fill-color (gk:vec4 0 1 0 1) :font *font32*))))))))
 		;; (if (collide-p *mouse* btn)
      		;;     (progn
 		;;       (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)

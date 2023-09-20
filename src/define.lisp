@@ -320,6 +320,9 @@
 (defclass end-recruit-btn (button)
   ())
 
+(defclass party-status-confirm-btn (button)
+  ())
+
 (defclass quest-btn (button)
   ())
 
@@ -328,6 +331,9 @@
 
 (defclass recruit-random-unit-btn (button)
   ((unit       :accessor unit        :initform nil      :initarg :unit)))
+
+(defclass show-unit-status-btn (recruit-random-unit-btn)
+  ())
 
 (defclass race-btn (status-up-btn)
   ())
