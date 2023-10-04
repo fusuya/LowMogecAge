@@ -19,6 +19,8 @@
 	 +w_Tomahawk+ +w_abarzin+ +w_long_ax+ +w_Halberd+ +w_glaive+
 	 ;;杖
 	 +w_mage_staff+ +w_quater_staff+ +w_ifrit_beard+ +w_mana_staff+ +w_reach_staff+
+	 ;;格闘
+	 +w_punch+
 	 ;;鎧
 	 +a_cloth_Armor+ +a_point_guard+ +a_soft_Leather+ +a_hard_leather+ +a_aramid_coat+
 	 +a_Breast_armor+ +a_bone_best+ +a_sprint_armor+ +a_chain_mail+
@@ -234,8 +236,10 @@
 			      :critical 10 :rangemin 1 :rangemax 1 :price 6800 :hand :2h :hit 1)
    (make-instance 'weapondesc :category :staff :name "リーチスタッフ" :damage 15 :atktype :short :required-str 5
 			      :critical 10 :rangemin 1 :rangemax 1 :price 7000 :hand :2h :hit 1)
-
-	      
+   ;;格闘
+   (make-instance 'weapondesc :category :grappling :name "パンチ" :damage 0 :atktype :short :required-str 0
+			      :critical 10 :rangemin 1 :rangemax 1 :price 0 :hand :1h :hit 0 :def 0)
+   
 	      
    ;;鎧
    (make-instance 'armordesc :category :armor :name "クロースアーマー" :required-str 1 :price 15 :def 2)

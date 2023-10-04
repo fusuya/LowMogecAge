@@ -7,7 +7,10 @@
 			   (setf mouse-x (/ x *scale-w*)
 				 mouse-y (/ y *scale-h*))))
 				 ;;x-for-obj (/ mouse-x *scale-obj-w*)
-				 ;;y-for-obj (/ mouse-y *scale-obj-h*))))
+    ;;y-for-obj (/ mouse-y *scale-obj-h*))))
+    (gk:bind-button :mouse-left :released
+		    (lambda ()
+		      (setf left nil)))
     (gk:bind-button :mouse-left :pressed
 		    (lambda ()
                       ;;(print "nnggngn")
@@ -23,7 +26,7 @@
 		      (setf right nil)))))
 
 (defun bind-key-event ()
-  (with-slots (space1 a key1 key2 key3 key4 key5 key6 key7 key8 key9 key0 w s d c z x v b) *keystate*
+  (with-slots (space1 a key1 key2 key3 key4 key5 key6 key7 key8 key9 key0 w s d c z x v b e r f g) *keystate*
     (gk:bind-button :space :pressed
 		    (lambda ()
 		      (setf space1 t)))
@@ -36,6 +39,30 @@
     (gk:bind-button :z :released
 		    (lambda ()
 		      (setf z nil)))
+    (gk:bind-button :f :pressed
+		    (lambda ()
+		      (setf f t)))
+    (gk:bind-button :f :released
+		    (lambda ()
+		      (setf f nil)))
+    (gk:bind-button :g :pressed
+		    (lambda ()
+		      (setf g t)))
+    (gk:bind-button :g :released
+		    (lambda ()
+		      (setf g nil)))
+    (gk:bind-button :e :pressed
+		    (lambda ()
+		      (setf e t)))
+    (gk:bind-button :e :released
+		    (lambda ()
+		      (setf e nil)))
+    (gk:bind-button :r :pressed
+		    (lambda ()
+		      (setf r t)))
+    (gk:bind-button :r :released
+		    (lambda ()
+		      (setf r nil)))
     (gk:bind-button :v :pressed
 		    (lambda ()
 		      (setf v t)))

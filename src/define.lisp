@@ -245,170 +245,6 @@
   (case size
     (64 *font64*)))
 
-(defclass button ()
-  ((pos :initarg :pos :initform (gk:vec2 0 0) :accessor button/pos)
-   (string :initarg :string :initform nil :accessor button/string)
-   (color :initarg :color :initform (gk:vec4 0 0 0 1) :accessor button/color)
-   (font :initarg :font :initform nil :accessor button/font)
-   (w :initarg :w :initform nil :accessor button/w)
-   (h :initarg :h :initform nil :accessor button/h)
-   (char-w :initarg :char-w :initform nil :accessor button/char-w)
-   (char-h :initarg :char-h :initform nil :accessor button/char-h)
-   (x1 :initarg :x1 :initform nil :accessor button/x1)
-   (x2 :initarg :x2 :initform nil :accessor button/x2)
-   (y1 :initarg :y1 :initform nil :accessor button/y1)
-   (y2 :initarg :y2 :initform nil :accessor button/y2)
-   (description :initarg :description :initform nil :accessor button/description)
-   (box? :initarg :box? :initform nil :accessor button/box?)
-   ))
-
-
-(defclass status-up-btn (button)
-  ((tag       :accessor tag        :initform 0      :initarg :tag)))
-
-(defclass init-jon-btn (button)
-  ())
-
-(defclass create-init-party-end-btn (button)
-  ())
-
-(defclass temp-init-party-btn (button)
-  ())
-
-(defclass game-start-btn (button)
-  ())
-
-(defclass game-end-btn (button)
-  ())
-
-(defclass equip-item-btn (button)
-  ((item       :accessor item        :initform 0      :initarg :item)
-   (new        :accessor new        :initform nil      :initarg :new)
-   (equiped-unit    :accessor equiped-unit        :initform nil      :initarg :equiped-unit)))
-
-(defclass sale-item-btn (equip-item-btn)
-  ((price       :accessor price        :initform 0      :initarg :price)))
-
-(defclass next-item-page (button)
-  ())
-(defclass prev-item-page (button)
-  ())
-(defclass end-equip-menu-btn (button)
-  ())
-
-(Defclass shop-btn (button)
-  ())
-
-(defclass inn-btn (button)
-  ())
-
-(defclass cash-exchange-btn (button)
-  ())
-
-(defclass end-shop-btn (button)
-  ())
-
-(defclass shop-prev-item-page (button)
-  ())
-
-(defclass shop-next-item-page (button)
-  ())
-
-(defclass recruit-btn (button)
-  ())
-
-(defclass end-recruit-btn (button)
-  ())
-
-(defclass party-status-confirm-btn (button)
-  ())
-
-(defclass quest-btn (button)
-  ())
-
-(defclass town-exit-btn (button)
-  ())
-
-(defclass recruit-random-unit-btn (button)
-  ((unit       :accessor unit        :initform nil      :initarg :unit)))
-
-(defclass show-unit-status-btn (recruit-random-unit-btn)
-  ())
-
-(defclass race-btn (status-up-btn)
-  ())
-(defclass job-btn (button)
-  ((job       :accessor job        :initform nil      :initarg :job)))
-
-(defclass back-select-race-btn (button)
-  ())
-
-(defclass ability-dice-btn (button)
-  ())
-
-(defclass ability-dice-end-btn (button)
-  ())
-
-(defclass back-ability-dice-btn (button)
-  ())
-
-(defclass back-select-job-btn (button)
-  ())
-
-(defclass job-level-up-btn (job-btn)
-  ())
-
-
-
-(defclass back-ability-dice-btn (button)
-  ())
-
-(defclass job-level-up-end-btn (back-ability-dice-btn)
-  ())
-
-(defclass init-skill-btn (status-up-btn)
-  ((skill-type       :accessor skill-type        :initform nil      :initarg :skill-type)))
-
-(defclass back-to-select-job-level-up-btn (button)
-  ())
-
-(defclass back-to-select-init-skill-btn (button)
-  ())
-
-(defclass create-init-player-unit-end-btn (button)
-  ())
-
-(defclass back-job-level-up-btn  (button)
-  ())
-
-
-
-(defclass command-btn (button)
-  ())
-
-(defclass normal-move-cmd-btn (command-btn)
-  ())
-
-(defclass fast-move-cmd-btn (command-btn)
-  ())
-
-(defclass attack-cmd-btn (command-btn)
-  ())
-
-(defclass skill-cmd-btn (command-btn)
-  ())
-
-(defclass use-item-btn (command-btn)
-  ((item :initarg :item :initform nil :accessor item)))
-
-(defclass change-equip-btn (command-btn)
-  ())
-
-(defclass wait-cmd-btn (command-btn)
-  ())
-
-(defclass skill-btn (command-btn)
-  ((tag :initarg :tag :initform (gk:vec2 0 0) :accessor tag)))
 
 
 
@@ -472,6 +308,9 @@
    (temp-dmg        :accessor game/temp-dmg    :initform nil    :initarg :temp-dmg)
    (dmg-font        :accessor game/dmg-font    :initform nil    :initarg :dmg-font)
    (temp-init-party        :accessor game/temp-init-party    :initform nil    :initarg :temp-init-party)
+   (skill-target-units        :accessor skill-target-units        :initform nil   :initarg :skill-target-units)
+   (expand-magic-area        :accessor game/expand-magic-area    :initform 0    :initarg :expand-magic-area)
+   (expand-magic-dist        :accessor game/expand-magic-dist    :initform 1    :initarg :expand-magic-dist)
    ))
 
 
@@ -523,8 +362,12 @@
    (key9     :accessor key9     :initform nil :initarg :key9)
    (key0     :accessor key0     :initform nil :initarg :key0)
    (z     :accessor z     :initform nil :initarg :z)
+   (f     :accessor f     :initform nil :initarg :f)
+   (g     :accessor g     :initform nil :initarg :g)
    (v     :accessor v     :initform nil :initarg :v)
    (b     :accessor b     :initform nil :initarg :b)
+   (e     :accessor e     :initform nil :initarg :e)
+   (r     :accessor r     :initform nil :initarg :r)
    (w     :accessor w     :initform nil :initarg :w)
    (s     :accessor s     :initform nil :initarg :s)
    (d     :accessor d     :initform nil :initarg :d)
@@ -665,61 +508,7 @@
 	 +img-e-warrior+
 	 +img-p-p-knight+ +img-p-thief+ +img-p-s-knight+ +img-p-archer+ +img-p-priest+ +img-p-sorcerer+ +img-p-warrior+)
 
-(defparameter *job-level-list* '(:magitec 0 :sorcerer 0 :scout 0 :fencer 0 :fighter 0 :grappler 0 :priest 0
-				   :conjurer 0 :sage 0 :ranger 0 :shooter 0))
 
-;;プレイヤー用
-(defclass unit (obj status anime)
-  ((name        :accessor name        :initform nil :initarg :name)     ;;名前
-   (weapon        :accessor weapon        :initform nil :initarg :weapon)
-   (shield        :accessor shield        :initform nil :initarg :shield)
-   (skill        :accessor skill        :initform nil :initarg :skill)
-   (use-item        :accessor use-item        :initform nil :initarg :use-item)
-   (selected-cmd        :accessor selected-cmd        :initform nil :initarg :selected-cmd)
-   (atked?       :accessor atked?       :initform nil  :initarg :atked?)
-   (atking-enemy       :accessor atking-enemy       :initform nil  :initarg :atking-enemy)
-   (sight       :accessor sight       :initform 5   :initarg :sight)
-   (temparea    :accessor temparea       :initform nil   :initarg :temparea)
-   (movearea    :accessor movearea    :initform nil :initarg :movearea)
-   (move        :accessor move        :initform nil :initarg :move)
-   (movecost    :accessor movecost    :initform nil :initarg :movecost)
-   (job         :accessor job         :initform nil :initarg :job) ;;技能
-   (job-level-list :accessor job-level-list  :initform (copy-list *job-level-list*)  :initarg :job-level-list)
-   (race         :accessor race         :initform nil :initarg :race) ;;種族
-   (atking-type         :accessor atking-type         :initform :short :initarg :atking-type)
-   (team        :accessor team        :initform nil :initarg :team)
-   (armor       :accessor armor       :initform nil :initarg :armor)
-   (accessory   :accessor accessory   :initform nil :initarg :accessory)
-   (state       :accessor state       :initform :inaction :initarg :state)
-   (canatkenemy :accessor canatkenemy :initform nil   :initarg :canatkenemy)
-   (atked-pos   :accessor atked-pos   :initform nil :initarg :atked-pos)
-   (job-name    :accessor job-name      :initform nil :initarg :job-name)
-   (id        :accessor id        :initform 0   :initarg :id)
-   (move-paths        :accessor move-paths        :initform nil   :initarg :move-paths)
-   (passive-skill  :accessor passive-skill  :initform nil :initarg :passive-skill)
-   (declare-skill  :accessor declare-skill  :initform nil   :initarg :declare-skill)
-   (action-skill  :accessor action-skill  :initform nil   :initarg :action-skill)
-   ))
-
-(defmethod initialize-instance :after ((unit unit) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (img-id) unit
-    (setf img-id :job-img)))
-
-(defclass e-unit (unit)
-  ((drop         :accessor drop       :initform nil :initarg :drop)    ;;ドロップするアイテム
-   (wakeup      :accessor wakeup      :initform nil :initarg :wakeup)))
-
-(defclass monster (e-unit)
-  ((def         :accessor def       :initform nil :initarg :def)
-   (atk-point         :accessor atk-point       :initform 0 :initarg :atk-point)
-   (rangemin         :accessor rangemin       :initform 1 :initarg :rangemin)
-   (rangemax         :accessor rangemax       :initform 1 :initarg :rangemax)))
-
-(defmethod initialize-instance :after ((monster monster) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (img-id) monster
-    (setf img-id :monster-img)))
 
 
 (defclass player ()
@@ -737,215 +526,11 @@
    (state           :accessor state       :initform :title :initarg :state)))     ;;武器
 
 
-;;ユニットのランダム初期ステータス
-(defun unit-random-status (unit)
-  (with-slots (str dex tec agi con vit mnd res int) unit
-    (setf dex (+ tec (dice 2 6)) agi (+ tec (dice 2 6)) str (+ con (dice 2 6)) vit (+ con (dice 2 6))
-	  int (+ mnd (dice 2 6)) res (+ mnd (dice 2 6)))))
-
-;;人間の初期技能
-(defparameter *human-job-list* '(:human-magitec :human-sorcerer :human-scout&fencer :human-none :human-fighter
-				 :human-grappler :human-priest :human-conjurer))
-;;エルフの初期技能
-(defparameter *elf-job-list* '(:elf-fencer :elf-sage&ranger :elf-priest :elf-conjurer :elf-sorcerer :elf-shooter))
-;;ドワーフの初期技能
-(defparameter *dwarf-job-list* '(:dwarf-shooter :dwarf-fighter :dwarf-grappler :dwarf-priest :dwarf-magitec))
-;;タビットの初期技能
-(defparameter *tabbit-job-list* '(:tabbit-conjurer :tabbit-sorcerer :tabbit-sage :tabbit-magitec))
-;;ルーンフォークの初期技能
-(defparameter *runefolk-job-list* '(:runefolk-sage :runefolk-shooter :runefolk-fighter :runefolk-grappler
-				    :runefolk-magitec :runefolk-sorecerer))
-;;ナイトメアの初期技能
-(defparameter *nightmare-job-list* '(:nightmare-sorecerer :nightmare-fighter :nightmare-grappler :nightmare-fencer&scout
-				     :nightmare-priest :nightmare-magitec))
-;;リカントの初期技能
-(defparameter *lycant-job-list* '(:lycant-scout :lycant-fighter :lycant-grappler :lycant-fencer :lycant-ranger))
-
-;;種族タグリスト
-(defparameter *all-race-tag-list* '(:human :elf :dwarf :tabbit :runefolk :nightmare :lycant))
-
-;;種族データリスト movecost= (草原 壁 弱壁 森 低山 高山 水 砦 階段)
-(defparameter *all-race-tag-and-data-list*
-  `(:human (:name "人間" :description "" :init-job-list ,*human-job-list* :movecost #(1 -1 -1 2 2 2 2 1 1))
-    :elf (:name "エルフ" :description "" :init-job-list ,*elf-job-list* :movecost #(1 -1 -1 1 3 3 1 1 1))
-    :dwarf (:name "ドワーフ" :description "" :init-job-list ,*dwarf-job-list* :movecost #(1 -1 -1 2 1 1 3 1 1))
-    :tabbit  (:name "タビット" :description "" :init-job-list ,*tabbit-job-list* :movecost #(1 -1 -1 1 2 3 3 1 1))
-    :runefolk  (:name "ルーンフォーク" :description "" :init-job-list ,*runefolk-job-list* :movecost #(1 -1 -1 2 1 2 3 1 1))
-    :nightmare (:name "ナイトメア" :description "" :init-job-list ,*nightmare-job-list* :movecost #(1 -1 -1 2 2 2 2 1 1))
-    :lycant (:name "リカント" :description "" :init-job-list ,*lycant-job-list* :movecost #(1 -1 -1 1 2 2 2 1 1))))
-
-;;回避判定に使うジョブ
-(defparameter *avoid-job-list* '(:fighter :grappler :fencer))
-;;戦士系ジョブ
-(defparameter *worrior-job-list* '(:fighter :grappler :fencer :shooter))
-;;魔法使い系
-(defparameter *magic-job-list* '(:sorcerer :priest :conjurer :magitec))
-;;全てのジョブ
-(defparameter *all-job-list* '(:fighter :grappler :fencer :shooter :sorcerer :priest :conjurer :magitec
-			       :sage :scout :ranger))
 
 
-;;特定のジョブレベルの最大値値取得
-(defun get-judgment-max-value-by-job (job-level-list job-list)
-  (loop :for job :in job-list
-	:maximize (getf job-level-list job)))
-
-;;特定のジョブレベルの合計値取得
-(defun get-judgment-sum-value-by-job (job-level-list job-list)
-  (loop :for job :in job-list
-	:sum (getf job-level-list job)))
 
 
-;;ユニットステータスの調整 todo
-(defun unit-status-adjust (unit)
-  (with-slots (hp maxhp mp maxmp str-bonus dex-bonus int-bonus agi-bonus res-bonus level job-level-list
- 	       vit-bonus hit-value avoid-value magic-power str dex agi int res vit id add-damage) unit
-    (setf str-bonus (get-ability-bonus str) agi-bonus (get-ability-bonus agi) int-bonus (get-ability-bonus int)
-	  res-bonus (get-ability-bonus res) vit-bonus (get-ability-bonus vit) dex-bonus (get-ability-bonus dex)
-	  hit-value (+ (get-judgment-max-value-by-job job-level-list *worrior-job-list*) dex-bonus)
-	  avoid-value (+ (get-judgment-max-value-by-job job-level-list *avoid-job-list*) agi-bonus)
-	  magic-power (+ (get-judgment-max-value-by-job job-level-list *magic-job-list*) int-bonus)
-	  add-damage (+ (get-judgment-max-value-by-job job-level-list *worrior-job-list*) str-bonus)
-	  hp (+ vit (* 3 (get-judgment-max-value-by-job job-level-list *all-job-list*)))
-	  mp (+ res (* 3 (get-judgment-sum-value-by-job job-level-list *magic-job-list*)))
-	  maxhp hp maxmp mp)))
 
-
-(defclass p-fighter (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-fighter) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "戦士"
-	  tec 7 con 10 mnd 4
-	  team :player
-	  weapon (item-make +w_bastard-sword+)
-	  armor (item-make +a_cloth_armor+)
-	  move 4
-	  movecost  #(1 -1 -1 2 2 3 3 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-warrior+))
-	  translate-y (- (* *battle-obj-h* +img-p-warrior+))
-	  id :fighter)
-    (unit-random-status e)
-    (unit-status-adjust e)
-    ))
-
-(defclass p-sorcerer (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-sorcerer) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "魔術師"
-	  tec 7 con 4 mnd 10
-	  move 3
-	  team :player
-	  weapon (item-make +w_mage_staff+)
-	  armor (item-make +a_cloth_armor+)
-	  movecost  #(1 -1 -1 2 2 -1 3 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-sorcerer+))
-	  translate-y (- (* *battle-obj-h* +img-p-sorcerer+))
-	  id :sorcerer)
-    (unit-random-status e)
-    (unit-status-adjust e)
-    ))
-
-
-(defclass p-priest (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-priest) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "僧侶"
-	  tec 4 con 8 mnd 9
-	  move 3
-	  team :player
-	  weapon (item-make +w_mage_staff+)
-	  armor (item-make +a_cloth_armor+)
-	  movecost  #(1 -1 -1 2 2 3 3 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-priest+))
-	  translate-y (- (* *battle-obj-h* +img-p-priest+))
-	  id :priest)
-    (unit-random-status e)
-    (unit-status-adjust e)))
-
-(defclass p-ranger (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-ranger) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "射手"
-	  tec 8 con 4 mnd 9
-	  move 3
-	  team :player
-	  weapon (item-make +w_short_bow+)
-	  armor (item-make +a_cloth_armor+)
-	  movecost  #(1 -1 -1 2 2 3 3 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-archer+))
-	  translate-y (- (* *battle-obj-h* +img-p-archer+))
-	  id :ranger)
-    (unit-random-status e)
-    (unit-status-adjust e)))
-
-(defclass p-s-knight (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-s-knight) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "騎士"
-	  tec 8 con 9 mnd 5
-	  move 5
-	  team :player
-	  weapon (item-make +w_javelin+)
-	  armor (item-make +a_cloth_armor+)
-	  movecost   #(1 -1 -1 2 2 3 2 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-s-knight+))
-	  translate-y (- (* *battle-obj-h* +img-p-s-knight+))
-	  id :s-knight)
-    (unit-random-status e)
-    (unit-status-adjust e)))
-
-(defclass p-p-knight (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-p-knight) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "天馬騎士"
-	  tec (dice 2 6) con (dice 2 6) mnd (dice 2 6)
-	  move 5
-	  team :player
-	  weapon (item-make +w_javelin+)
-	  armor (item-make +a_cloth_armor+)
-	  movecost   #(1 -1 -1 1 1 1 1 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-p-knight+))
-	  translate-y (- (* *battle-obj-h* +img-p-p-knight+))
-	  id :p-knight)
-    (unit-random-status e)
-    (unit-status-adjust e)))
-
-(Defclass p-scout (unit)
-  ())
-
-(defmethod initialize-instance :after ((e p-scout) &rest initargs)
-  (declare (ignore initargs))
-  (with-slots (job-name movecost id origin move weapon armor team con tec mnd translate-y) e
-    (setf job-name "盗賊"
-	  tec 10 con 7 mnd 4
-	  move 4
-	  team :player
-	  weapon (item-make +w_knife+)
-	  armor (item-make +a_cloth_armor+)
-	  movecost   #(1 -1 -1 2 2 2 2 1 1)
-	  origin (gk:vec2 0 (* 32 +img-p-thief+))
-	  translate-y (- (* *battle-obj-h* +img-p-thief+))
-	  id :scout)
-    (unit-random-status e)
-    (unit-status-adjust e)))
 
 ;;ジョブデータ
 (defclass jobdesc ()
@@ -964,87 +549,14 @@
       (aref *move-cost* 0)   0)
 
 
-(defparameter *init-class-list*
-  '(:warrior :sorcerer :priest :archer :knight :thief :p-knight))
 
-(defparameter *jon-name-list*
-  '("戦士" "魔術師" "神官" "射手" "騎士" "天馬騎士" "盗賊"))
-
-(defparameter *show-class*
-  '(:fighter "戦士" :sorcerer "魔術師" :priest "僧侶" :ranger "射手" :s-knight "騎士" :scout "盗賊"
-    :p-knight "天馬騎士"))
 
 (my-enum +job_warrior+ +job_sorcerer+ +job_priest+ +job_archer+ +job_s_knight+ +job_thief+
 	 +job_p_knight+
 	 +job_brigand+ +job_dragon+ +job_hydra+ +job_yote1+ +job_orc+ +job_slime+ +job_goron+
 	 +job_max+)
-;;ジョブ
-;; (my-enum +job_lord+ +job_paradin+ +job_s_knight+ +job_a_knight+ +job_archer+
-;; 	 +job_p_knight+ +job_pirate+ +job_hunter+ +job_thief+ +job_bandit+
-;; 	 +job_d_knight+ +job_shogun+ +job_mercenary+ +job_yusha+ +job_max+)
 
 ;;movecost= (草原 壁 弱壁 森 低山 高山 水 砦 階段)
-(defparameter *jobdescs*
-  (make-array +job_max+ :initial-contents
-	      (list (make-instance 'jobdesc :name "戦士" :move 2 :img +job_warrior+
-				   :canequip '(:sword :spear :ax :item :armor)
-				   :lvuprate '(:hp 90 :str 60 :vit 70 :agi 30 :int 10 :res 30)
-				   :movecost #(1 -1 -1 2 2 3 -1 1 1) :id :warrior)
-		    (make-instance 'jobdesc :name "魔術師" :move 2 :img +job_sorcerer+
-				   :canequip '(:wand :item :armor)
-				   :lvuprate '(:hp 60 :str 10 :vit 30 :agi 20 :int 90 :res 60)
-				   :movecost #(1 -1 -1 2 2 -1 -1 1 1) :id :sorcerer)
-		    (make-instance 'jobdesc :name "僧侶" :move 2 :img +job_priest+
-				   :canequip '(:staff :item :armor)
-				   :lvuprate '(:hp 60 :str 10 :vit 30 :agi 30 :int 80 :res 90)
-				   :movecost #(1 -1 -1 2 2 -1 -1 1 1) :id :priest)
-		    (make-instance 'jobdesc :name "射手" :move 2 :img +job_archer+
-				   :canequip '(:bow :item :armor)
-				   :lvuprate '(:hp 70 :str 60 :vit 50 :agi 60 :int 10 :res 40)
-				   :movecost #(1 -1 -1 2 2 -1 -1 1 1) :id :archer)
-		    (make-instance 'jobdesc :name "騎士" :move 3 :img +job_s_knight+
-				   :canequip '(:spear :item :armor)
-				   :lvuprate '(:hp 80 :str 90 :vit 70 :agi 40 :int 10 :res 40)
-				   :movecost #(1 -1 -1 2 2 3 -1 1 1) :id :s_knight)
-		    (make-instance 'jobdesc :name "盗賊" :move 3 :img +job_thief+
-				   :canequip '(:sword :item :armor)
-				   :lvuprate '(:hp 70 :str 60 :vit 50 :agi 80 :int 10 :res 40)
-				   :movecost #(1 -1 -1 2 3 3 2 1 1) :id :thief)
-		    (make-instance 'jobdesc :name "天馬騎士" :move 3 :img +job_p_knight+
-				   :canequip '(:spear :item :armor)
-				   :lvuprate '(:hp 80 :str 60 :vit 70 :agi 60 :int 10 :res 80)
-				   :movecost #(1 -1 -1 1 1 1 1 1 1) :id :p_knight)
-		    ;;敵
-		    (make-instance 'jobdesc :name "ブリガンド" :move 2 :img +job_brigand+
-				   :canequip '(:bow :item :armor)
-				   :lvuprate '(:hp 70 :str 60 :vit 50 :agi 40 :int 10 :res 40)
-				   :movecost #(1 -1 -1 2 2 3 -1 2 1) :id :brigand)
-		    (make-instance 'jobdesc :name "ドラゴン" :move 3 :img +job_dragon+
-				   :canequip '(:item :armor)
-				   :lvuprate '(:hp 90 :str 60 :vit 80 :agi 30 :int 60 :res 60)
-				   :movecost #(1 -1 -1 2 2 2 2 1 1) :id :dragon)
-		    (make-instance 'jobdesc :name "ヒドラ" :move 2 :img +job_hydra+
-				   :canequip '(:item :armor)
-				   :lvuprate '(:hp 90 :str 50 :vit 80 :agi 20 :int 10 :res 30)
-				   :movecost #(1 -1 -1 2 3 3 1 1 1) :id :hydra)
-		    (make-instance 'jobdesc :name "メタルよていち" :move 3 :img +job_yote1+
-				   :canequip '(:item :armor)
-				   :lvuprate '(:hp 0 :str 20 :vit 90 :agi 90 :int 10 :res 90)
-				   :movecost #(1 -1 -1 1 1 1 1 1 1) :id :yote1)
-		    (make-instance 'jobdesc :name "オーク" :move 2 :img +job_orc+
-				   :canequip '(:spear :item :armor)
-				   :lvuprate '(:hp 70 :str 90 :vit 70 :agi 20 :int 10 :res 20)
-				   :movecost #(1 -1 -1 2 2 3 -1 1 1) :id :orc)
-		    (make-instance 'jobdesc :name "スライム" :move 2 :img +job_slime+
-				   :canequip '(:spear :item :armor)
-				   :lvuprate '(:hp 50 :str 30 :vit 40 :agi 30 :int 10 :res 30)
-				   :movecost #(1 -1 -1 2 2 2 2 1 1) :id :slime)
-		    (make-instance 'jobdesc :name "ゴロン" :move 2 :img +job_goron+
-				   :canequip '(:item :armor)
-				   :lvuprate '(:hp 50 :str 50 :vit 50 :agi 30 :int 10 :res 30)
-				   :movecost #(1 -1 -1 2 2 1 1 1 1) :id :goron)
-		    )))
-
 
 
 
@@ -1137,16 +649,6 @@
 
 
 
-;;ジョブデータ取得
-(defun get-job-data (job ability)
-  (case ability
-    (:name     (name     (aref *jobdescs* job)))
-    (:move     (move     (aref *jobdescs* job)))
-    (:movecost (movecost (aref *jobdescs* job)))
-    (:canequip (canequip (aref *jobdescs* job)))
-    (:lvuprate (lvuprate (aref *jobdescs* job)))
-    (:img      (img      (aref *jobdescs* job)))))
-
 
 (defparameter *default-damage-table-list*
   '((0 0 0 0 0 0 1 2 2 3 3 4 4)
@@ -1211,16 +713,19 @@
     :change-equip "装備変更:装備変更画面に切り替える"
     :normal-attack "通常攻撃:普通の攻撃"
     :skill "スキル:なんかスキル使う"
+    :declare-skill "宣言スキルのON/OFF"
     :use-item "アイテム：なんかアイテム使う"
     :normal-move "通常移動:移動後に行動できる"
     :fast-move "全力移動:移動距離は長いが、移動後に行動できない"
     :fire "ファイア：ふぁいあ！"
+    :energy-bolt "魔法の矢を放ち、(威力10+魔力)点のダメージを与える[対象:一体]"
     :heal "ヒール：回復魔法 気絶状態の味方には使えない"
     :first-aid "応急手当：気絶状態の味方をHP1で起こす、かもしれない"
     :healing-potion "回復薬：HPを回復する"
     :magic-perfume "魔香水：MPを回復する"
     ))
 
+;;初期技能まとめ
 (defparameter *init-skill-tag-list*
   '(:slip-through :targeting :weapon-expert-a-sword :weapon-expert-a-axe :weapon-expert-a-spear :weapon-expert-a-staff
     :weapon-expert-a-bow :armor-expert-a-light-armor :armor-expert-a-heavy-armor :armor-expert-a-shield :ambidexterity
@@ -1228,6 +733,8 @@
     :defence-stance :violent-cast-1 :special-attack-1 :me-power-certainty :me-certainty :me-number :me-distance
     :me-time :me-area :magic-convergence :magic-hit :armor-piercing-1 :snipe :word-break))
 
+
+;;全てのスキルデータ
 (defparameter *all-skill-tag-and-data*
   '(:slip-through (:name "かいくぐり" :skill-type :passive :description "盾を装備して近接攻撃を回避すると、次の攻撃がクリティカル発生しやすくなる")
     :targeting (:name "ターゲッティング" :skill-type :passive :description "誤射を防ぐ")
@@ -1299,6 +806,10 @@
 (defclass fire (skill)
   ())
 
+(defclass energy-bolt (skill)
+  ())
+
+
 (defclass use-item (skill itemdesc)
   ())
 (defclass healing-potion (use-item)
@@ -1308,14 +819,20 @@
 
 
 
-(defparameter *skill-and-item-list*
-  `(:heal ,(make-instance 'heal :name "ヒール" :target :ally :r 0 :mp 3 :rangemin 1 :rangemax 5
+(defparameter *all-magic-list*
+  `(:heal ,(make-instance 'heal :name "ヒール" :target :one :r 0 :mp 3 :rangemin 1 :rangemax 5
 				:element :holy :power 10 :depend :int :img :skill-img
 				:origin (gk:vec2 0 (* +heal+ 32)) :sound :heal
 				:translate-y (- (* +heal+ *battle-obj-h*))
 				:max-frame 100 :interval 20 :atking-type :magic-heal :critical 99
 				:dmg-table (nth 10 *default-damage-table-list*))
-    :fire ,(make-instance 'fire :name "ファイア" :target :enemy :r 1 :mp 3 :rangemin 1 :rangemax 5
+    :fire ,(make-instance 'fire :name "ファイア" :target :area :r 1 :mp 8 :rangemin 1 :rangemax 5
+				:element :fire :power 10 :depend :int :img :skill-img
+				:origin (gk:vec2 0 (* +fire+ 32)) :sound :fire
+				:translate-y (- (* +fire+ *battle-obj-h*))
+				:max-frame 120 :interval 20 :atking-type :magic-atk
+				:critical 10 :dmg-table (nth 10 *default-damage-table-list*))
+    :energy-bolt ,(make-instance 'energy-bolt :name "エネルギーボルト" :target :one :r 0 :mp 5 :rangemin 1 :rangemax 5
 				:element :fire :power 10 :depend :int :img :skill-img
 				:origin (gk:vec2 0 (* +fire+ 32)) :sound :fire
 				:translate-y (- (* +fire+ *battle-obj-h*))
@@ -1326,16 +843,6 @@
 					  :origin (gk:vec2 0 (* +heal+ 32)) :sound :heal
 					  :translate-y (- (* +heal+ *battle-obj-h*))
 					  :max-frame 120 :interval 20)
-    :healing-potion ,(make-instance 'healing-potion :name "回復薬" :target :ally :r 0 :mp 0 :rangemin 0 :rangemax 0
-						    :element :holy :power 20 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
-						    :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
-						    :price 100
-						    :dmg-table (nth 20 *default-damage-table-list*) :tag :healing-potion)
-    :magic-perfume ,(make-instance 'magic-perfume :name "魔香水" :target :ally :r 0 :mp 0 :rangemin 1 :rangemax 1
-						  :element :holy :power 0 :depend :int :img :skill-img :origin (gk:vec2 0 (* +heal+ 32))
-						  :max-frame 100 :interval 20 :atking-type :magic-heal :critical 99 :category :item
-						  :price 600
-						  :dmg-table (nth 0 *default-damage-table-list*) :tag :magic-perfume)
     ))
 
 
@@ -1343,91 +850,3 @@
 (defun get-use-item-data (list)
   (loop :for tag :in list
 	:collect (shallow-copy-object (getf *skill-and-item-list* tag))))
-
-(defparameter *all-job-tag-and-data-list* '(:magitec (:name "マギテック" :description "")
-					    :sorcerer (:name "ソーサラー" :description "")
-					    :scout (:name "スカウト" :description "")
-					    :fencer  (:name "フェンサー" :description "")
-					    :fighter  (:name "ファイター" :description "")
-					    :grappler (:name "グラップラー" :description "")
-					    :priest (:name "プリースト" :description "")
-					    :ranger (:name "レンジャー" :desciption "")
-					    :conjurer (:name "コンジャラー" :description "")
-					    :sage  (:name "セージ" :description "")
-					    :shooter (:name "シューター" :description "")))
-
-
-(defparameter *init-job-data-list*
-  `(:human-magitec (:name "マギテック" :tec 8 :con 4 :mnd 9 :exp-point 2000 :tag :magitec :img ,+img-p-archer+)
-    :human-sorcerer (:name "ソーサラー" :tec 6 :con 5 :mnd 10 :exp-point 2000 :tag :sorcerer :img ,+img-p-sorcerer+)
-    :human-scout&fencer (:name "スカウト&フェンサー" :tec 10 :con 7 :mnd 4 :exp-point 2000 :tag (:scout :fencer)
-			 :img ,+img-p-thief+)
-    :human-none (:name "なし" :tec 7 :con 7 :mnd 7 :exp-point 3000 :tag :none :img ,+img-p-warrior+)
-    :human-fighter (:name "ファイター" :tec 7  :con 10 :mnd 4 :exp-point 2000 :tag :fighter :img ,+img-p-warrior+)
-    :human-grappler (:name "グラップラー" :tec 7  :con 10 :mnd 4 :exp-point 2000 :tag :grappler :img ,+img-p-warrior+)
-    :human-priest (:name "プリースト" :tec 4  :con 8 :mnd 9 :exp-point 2000 :tag :priest :img ,+img-p-priest+)
-    :human-conjurer (:name "コンジャラー" :tec 7 :con 4 :mnd 10 :exp-point 2000 :tag :conjurer :img ,+img-p-sorcerer+)
-    :elf-fencer (:name "フェンサー" :tec 12 :con 5 :mnd 9 :exp-point 2500 :tag :fencer :img ,+img-p-thief+)
-    :elf-sage&ranger (:name "セージ＆レンジャー" :tec 10 :con 5 :mnd 11 :exp-point 2000 :tag (:sage :ranger)
-		      :img ,+img-p-thief+)
-    :elf-priest (:name "プリースト" :tec 9  :con 5 :mnd 12 :exp-point 2000 :tag :priest :img ,+img-p-priest+)
-    :elf-conjurer (:name "コンジャラー" :tec 9 :con 4 :mnd 13 :exp-point 2000 :tag :conjurer :img ,+img-p-sorcerer+)
-    :elf-sorcerer (:name "ソーサラー" :tec 10 :con 3 :mnd 13 :exp-point 2000 :tag :sorcerer :img ,+img-p-sorcerer+)
-    :elf-shooter (:name "シューター" :tec 13 :con 5 :mnd 8 :exp-point 2500 :tag :shooter :img ,+img-p-archer+)
-    :dwarf-shooter (:name "シューター" :tec 6 :con 8 :mnd 6 :exp-point 2500 :tag :shooter :img ,+img-p-archer+)
-    :dwarf-fighter (:name "ファイター" :tec 4  :con 11 :mnd 5 :exp-point 2000 :tag :fighter :img ,+img-p-warrior+)
-    :dwarf-grappler (:name "グラップラー" :tec 5  :con 10 :mnd 5 :exp-point 2000 :tag :grappler :img ,+img-p-warrior+)
-    :dwarf-priest (:name "プリースト" :tec 4  :con 7 :mnd 9 :exp-point 2000 :tag :priest :img ,+img-p-priest+)
-    :dwarf-magitec (:name "マギテック" :tec 6 :con 7 :mnd 7 :exp-point 2000 :tag :magitec :img ,+img-p-archer+)
-    :tabbit-conjurer (:name "コンジャラー" :tec 6 :con 6 :mnd 10 :exp-point 2000 :tag :conjurer :img ,+img-p-sorcerer+)
-    :tabbit-sorcerer (:name "ソーサラー" :tec 5 :con 7 :mnd 10 :exp-point 2000 :tag :sorcerer :img ,+img-p-sorcerer+)
-    :tabbit-sage (:name "セージ" :tec 5 :con 8 :mnd 9 :exp-point 2500 :tag :sage :img ,+img-p-sorcerer+)
-    :tabbit-magitec (:name "マギテック" :tec 8 :con 5 :mnd 9 :exp-point 2000 :tag :magitec :img ,+img-p-archer+)
-    :runefolk-sage (:name "セージ" :tec 8 :con 10 :mnd 8 :exp-point 2500 :tag :sage :img ,+img-p-sorcerer+)
-    :runefolk-shooter (:name "シューター" :tec 12 :con 8 :mnd 8 :exp-point 2500 :tag :shooter :img ,+img-p-archer+)
-    :runefolk-fighter (:name "ファイター" :tec 9  :con 12 :mnd 5 :exp-point 2000 :tag :fighter :img ,+img-p-warrior+)
-    :runefolk-grappler (:name "グラップラー" :tec 9 :con 12 :mnd 5 :exp-point 2000 :tag :grappler :img ,+img-p-warrior+)
-    :runefolk-magitec (:name "マギテック" :tec 12 :con 8 :mnd 6 :exp-point 2000 :tag :magitec :img ,+img-p-archer+)
-    :runefolk-sorecerer (:name "ソーサラー" :tec 9 :con 8 :mnd 9 :exp-point 2000 :tag :sorcerer :img ,+img-p-sorcerer+)
-    :nightmare-sorecerer (:name "ソーサラー" :tec 5 :con 13 :mnd 12 :exp-point 2000 :tag :sorcerer :img ,+img-p-sorcerer+)
-    :nightmare-fighter (:name "ファイター" :tec 7 :con 15 :mnd 8 :exp-point 2000 :tag :fighter :img ,+img-p-warrior+)
-    :nightmare-grappler (:name "グラップラー" :tec 7  :con 15 :mnd 8 :exp-point 2000 :tag :grappler :img ,+img-p-warrior+)
-    :nightmare-fencer&scout (:name "フェンサー＆スカウト" :tec 11 :con 13 :mnd 6 :exp-point 2000 :tag (:fencer :scout) :img ,+img-p-thief+)
-    :nightmare-priest (:name "プリースト" :tec 6 :con 14 :mnd 10 :exp-point 2000 :tag :priest :img ,+img-p-priest+)
-    :nightmare-magitec (:name "マギテック" :tec 9 :con 9 :mnd 12 :exp-point 2000 :tag :magitec :img ,+img-p-archer+)
-    :lycant-scout (:name "スカウト" :tec 13 :con 5 :mnd 7 :exp-point 2500 :tag :scout :img ,+img-p-thief+)
-    :lycant-fighter (:name "ファイター" :tec 10 :con 9 :mnd 6 :exp-point 2000 :tag :fighter :img ,+img-p-warrior+)
-    :lycant-grappler (:name "グラップラー" :tec 11  :con 7 :mnd 7 :exp-point 2000 :tag :grappler :img ,+img-p-warrior+)
-    :lycant-fencer (:name "フェンサー" :tec 12  :con 6 :mnd 7 :exp-point 2500 :tag :fencer :img ,+img-p-warrior+)
-    :lycant-ranger (:name "レンジャー" :tec 9  :con 8 :mnd 8 :exp-point 2500 :tag :ranger :img ,+img-p-thief+)
-    ))
-
-
-;;経験点テーブル
-(defparameter *exp-point-table-A*
-  '(1 1000
-    2 1000
-    3 1500
-    4 1500
-    5 2000
-    6 2000))
-
-(defparameter *exp-point-table-B*
-  '(1 500
-    2 1000
-    3 1000
-    4 1500
-    5 1500
-    6 2000))
-
-(defparameter *all-job-exp-point-table* `(:fighter ,*exp-point-table-a*
-					  :grappler ,*exp-point-table-a*
-					  :fencer ,*exp-point-table-b*
-					  :shooter ,*exp-point-table-b*
-					  :sorcerer ,*exp-point-table-a*
-					  :conjurer ,*exp-point-table-a*
-					  :priest ,*exp-point-table-a*
-					  :magitec ,*exp-point-table-a*
-					  :scout ,*exp-point-table-b*
-					  :ranger ,*exp-point-table-b*
-					  :sage ,*exp-point-table-b*))

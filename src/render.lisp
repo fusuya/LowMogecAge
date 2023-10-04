@@ -164,7 +164,7 @@
 ;;ボタンの説明
 (defun draw-btn-description (btn)
   (with-slots (description pos) btn
-    (let ((posy (if (< (gk:y pos) 300) 520 15)))
+    (let ((posy (if (< (gk:y pos) 300) (- *window-h* 20) 15)))
       (gk:draw-rect (gk:vec2 100 (- posy 10)) 650 35 :fill-paint (gk:vec4 0 0 0.3 0.6) :thickness 2
 						    :stroke-paint (gk:vec4 1 1 1 0.7) :rounding 3)
       (gk:draw-text description (gk:vec2 110 posy) :fill-color (gk:vec4 0.7 1 1 1) :font *font32*))))
@@ -201,6 +201,24 @@
 	  (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
 							:thickness thickness :rounding rounding)
      	  (gk:draw-text string (gk:add pos adjust) :font font :fill-color color)))))
+
+;;宣言スキル欄  枠ありボタン bg=黒背景
+(defmethod draw-text-btn-with-waku ((btn declare-skill-btn) thickness adjust &key (bg nil) (rounding 1))
+  (with-slots (selected-unit) *game*
+    (with-slots (active-declare-skill) selected-unit
+      (with-slots (pos string font color w h tag) btn
+	(when (collide-p *mouse* btn)
+	  (draw-btn-description btn))
+	(if (find tag active-declare-skill)
+     	    (progn
+              (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
+      	      (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1)))
+	    (progn
+	      (when bg
+		(gk:draw-rect pos w h :fill-paint (gk:vec4 0 0 0 0.6) :rounding rounding))
+	      (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
+				    :thickness thickness :rounding rounding)
+     	      (gk:draw-text string (gk:add pos adjust) :font font :fill-color color)))))))
 
 
 (defmethod draw-button ((btn button))
@@ -402,17 +420,20 @@
 
 (defun draw-enemies ()
   (with-slots (enemies) *battle-field*
-    (with-slots (selected-unit) *game*
+    (with-slots (selected-unit skill-target-units) *game*
 	(let ((select-monster nil))
 	  (loop :for e :in enemies
-		:do (with-slots (pos w h atked-pos) e
+		:do (with-slots (pos w h atked-pos x y) e
 		      (when atked-pos
 			(gk:draw-rect pos w h :fill-paint (gk:vec4 0.7 0 0 0.7)))
 		      (draw-obj-img-in-battle e)
 		      (when (collide-p *mouse* e)
-			(setf select-monster e))))
+			(setf select-monster e))
+		      (when (find e skill-target-units :test #'equal)
+			(gk:draw-rect pos w h :fill-paint (gk:vec4 1 0 0 0.5)))))
 	  (when select-monster
-	    (draw-unit-info select-monster))))))
+	    (draw-unit-info select-monster))
+	  ))))
 ;; (gk:draw-rect pos 32 32 :fill-paint (gk:vec4 0.6 0 0 0.3)
 ;; 	      :stroke-paint (gk:vec4 1 0 0 1))))))
 ;;---------------------------------------------------------------------------------------------
@@ -457,14 +478,44 @@
 ;;-----------------------------------------------------------------------------------
 ;; skill
 (defun draw-skill-anime ()
-  (with-slots (selected-skill) *game*
+  (with-slots (selected-skill skill-target-units) *game*
     (with-slots (pos scope translate-x translate-y img) selected-skill
-      (loop :for xy :in scope
-	    :do (let ((posx (* (car xy) *battle-obj-w*))
-		      (posy (* (cadr xy) *battle-obj-h*)))
-		  (bg:draw-image (gk:vec2 posx posy) *battle-obj-w* *battle-obj-h*
+      (loop :for unit :in skill-target-units
+	    :do (with-slots (pos) unit
+		  (bg:draw-image pos *battle-obj-w* *battle-obj-h*
 				 (gk::resource-by-id img) :scale-x *scale-obj-w* :scale-y *scale-obj-h*
-				 :translate-x translate-x :translate-y translate-y))))))
+							  :translate-x translate-x :translate-y translate-y))))))
+
+;;-----------------------------------------------------------------------------------
+;;スキルターゲット選択中の宣言スキルの説明
+(defun draw-declare-skill-description ()
+  (with-slots (selected-unit selected-skill skill-target-units expand-magic-area expand-magic-dist) *game*
+    (with-slots (active-declare-skill) selected-unit
+      (with-slots (target mp) selected-skill
+	(with-slots ((mouse-y y)) *mouse*
+	  (let* ((posy (if (>= mouse-y 408) 10 (- *window-h* 30)))
+		 (posx 200)
+		 (h 30)
+		 (func (if (> mouse-y 408)
+			   #'- #'+))
+		 (desc-list `((:me-number :one ,(format nil "魔法拡大/数:魔法発動は対象を選んでから右クリック 消費MP:~d"
+							(* mp (length skill-target-units))))
+			      (:me-area :area ,(format nil "魔法拡大/範囲:Eキーで拡大,Rキーで縮小 消費MP:~d"
+						       (* mp (1+ expand-magic-area))))
+			      (:me-distance ,target ,(format nil "魔法拡大/距離:Fキーで拡大、Gキーで縮小 消費MP:~d"
+							(* mp expand-magic-dist))))))
+	    (loop :for desc :in desc-list
+		  :do (let ((declare-skill (car desc))
+			    (skill-target (cadr desc))
+			    (desc-string (caddr desc)))
+			(when (and (find declare-skill active-declare-skill)
+				   (eq target skill-target))
+			  (gk:draw-rect (gk:vec2 190 (- posy 10)) 850 35 :fill-paint (gk:vec4 0 0 0.3 0.6) :thickness 2
+									 :stroke-paint (gk:vec4 1 1 1 0.7) :rounding 3)
+			  (gk:draw-text desc-string
+					(gk:vec2 posx posy) :fill-color *white* :font *font32*)
+			  (setf posy (funcall func posy (+ h 1))))))))))))
+
 
 ;;-----------------------------------------------------------------------------------
 
@@ -498,6 +549,8 @@
     (draw-enemies)
     (when (eq action-state :skill-anime)
       (draw-skill-anime))
+    (when (eq action-state :skill-mode)
+      (draw-declare-skill-description))
     (draw-action-command-btn)
     (draw-dmg-font)))
 
@@ -827,6 +880,7 @@
 
 ;;町メニュー
 (Defun draw-town-menu ()
+  (draw-welcome-town)
   (with-slots (btn-list) *game*
     (loop :for btn :in btn-list
 	  :do (draw-text-btn-with-waku btn 2 (gk:vec2 10 8) :rounding 8 :descri t))
@@ -919,23 +973,18 @@
 		(gk:draw-text (format nil "~a" name) (gk:vec2 posx posy)
 			      :fill-color *white* :font font)))))
 
-
-;;ランダムユニット
-(defmethod draw-recruit-btn ((btn recruit-random-unit-btn))
+;;ユニットの名前ボタンとステータス表示用
+(defun show-unit-btn-and-show-status (btn)
   (with-slots (unit pos string w h font color) btn
     (let* ((adjust (gk:vec2 8 10))
 	   (rounding 10)
 	   (thickness 3))
-      ;; (if (collide-p *mouse* btn)
-      ;; 	  (progn
-      ;; 	    (gk:draw-rect pos w h :fill-paint (gk:vec4 1 1 1 1) :rounding rounding)
-      ;; 	    (gk:draw-text string (gk:add pos adjust) :font font :fill-color (gk:vec4 0 0 0 1))
       (collide-mouse btn adjust rounding thickness
 	(draw-unit-status unit 300 700 690 560 970 660 300 200 45 *font40*)))))
-	  ;; (progn
-	  ;;   (gk:draw-rect pos w h :stroke-paint (gk:vec4 1 1 1 1)
-	  ;; 			  :thickness thickness :rounding rounding)
-     	  ;;   (gk:draw-text string (gk:add pos adjust) :font font :fill-color color))))))
+
+;;ランダムユニット
+(defmethod draw-recruit-btn ((btn recruit-random-unit-btn))
+  (show-unit-btn-and-show-status btn))
 
 ;;戻るボタン
 (defmethod draw-recruit-btn ((btn end-recruit-btn))
@@ -947,13 +996,29 @@
     (loop :for btn :in btn-list
 	  :do (draw-recruit-btn btn))))
 
+
+;;ユニットステータス
+(defmethod draw-show-status-btn ((btn show-unit-status-btn))
+  (show-unit-btn-and-show-status btn))
+;;戻るボタン
+(defmethod draw-show-status-btn ((btn end-recruit-btn))
+  (draw-text-btn-with-waku btn 3 (gk:vec2 4 8) :rounding 10))
+
+;;仲間ステータス確認
+(defun draw-show-status ()
+  (with-slots (btn-list) *game*
+    (gk:draw-text "ステータス" (gk:vec2 500 760) :fill-color *white* :font *font64*)
+    (gk:draw-text "※ユニットを右クリックでパーティから外せます" (gk:vec2 200 30) :fill-color (gk:vec4 1 1 0 1) :font *font32*)
+    (loop :for btn :in btn-list
+	  :do (draw-show-status-btn btn))))
+
 (defun draw-town ()
   (with-slots (action-state) *game*
-    (draw-welcome-town)
-    (case action-state 
+    (case action-state
       (:town-menu (draw-town-menu))
       (:shop (draw-shop-item))
-      (:recruit (draw-recruit)))))
+      (:recruit (draw-recruit))
+      (:show-status (draw-show-status)))))
 
 ;;---------------------------------------------------------------------------------------------------------
 ;;レベルアップ
@@ -1124,7 +1189,8 @@
       (draw-text-btn-with-waku btn 3 (gk:vec2 5 10) :rounding 10)
       (with-slots (job pos) btn
 	(let* ((now-level (getf job-level-list job))
-	       (exp-table (getf *all-job-exp-point-table* job))
+	       (job-data (getf *all-job-tag-and-data-list* job))
+	       (exp-table (getf job-data :exp-point-table))
 	       (required-point (getf exp-table (1+ now-level))))
 	  (gk:draw-text (format nil "Lv ~d → Lv ~d" now-level (1+ now-level))
 			(gk:add pos (gk:vec2 270 10)) :fill-color (gk:vec4 1 0.4 0 1) :font *font48*)
